@@ -56,15 +56,15 @@ export const landingCopy = {
 };
 
 export const flowCopy = {
-  mockFlow: { ko: "목업 비평 흐름", en: "Mock critique flow" },
+  mockFlow: { ko: "AI 비평 흐름", en: "AI critique flow" },
   steps: [
     { ko: "비평가 선택", en: "Choose critic" },
     { ko: "프로젝트 설명", en: "Describe project" },
     { ko: "비평 설정", en: "Set critique" },
   ],
   phaseNote: {
-    ko: "현재 버전은 목업 데이터만 사용합니다. AI 라우트와 레퍼런스 데이터베이스는 Phase 3, 4에서 연결합니다.",
-    en: "This first build uses mock data only. The AI route and reference database start in Phase 3 and Phase 4.",
+    ko: "현재 버전은 OpenAI API로 비평을 생성하고, 레퍼런스는 로컬 데이터에서 가볍게 추천합니다.",
+    en: "This version generates critiques with the OpenAI API and lightly recommends references from local data.",
   },
   requiredError: {
     ko: "다음으로 넘어가기 전에 필수 프로젝트 항목을 입력해주세요.",
@@ -76,7 +76,7 @@ export const flowCopy = {
   setCritique: { ko: "비평 방식을 설정하세요", en: "Set the critique" },
   back: { ko: "이전", en: "Back" },
   continue: { ko: "계속", en: "Continue" },
-  generate: { ko: "목업 비평 생성", en: "Generate mock critique" },
+  generate: { ko: "AI 비평 생성", en: "Generate AI critique" },
   fields: {
     title: { ko: "프로젝트 제목", en: "Project title" },
     oneLineSummary: { ko: "한 문장 요약", en: "One-sentence project summary" },
@@ -106,7 +106,7 @@ export const flowCopy = {
 };
 
 export const loadingCopy = {
-  label: { ko: "목업 비평 생성 중", en: "Generating mock critique" },
+  label: { ko: "AI 비평 생성 중", en: "Generating AI critique" },
   headline: {
     ko: (criticName: string) => `${criticName}의 렌즈로 프로젝트를 읽는 중입니다.`,
     en: (criticName: string) => `Reading the project through ${criticName}.`,
@@ -131,7 +131,7 @@ export const loadingCopy = {
 
 export const resultCopy = {
   anotherCritic: { ko: "다른 비평가", en: "Another critic" },
-  mockSheet: { ko: "목업 리뷰 시트", en: "Mock review sheet" },
+  mockSheet: { ko: "AI 리뷰 시트", en: "AI review sheet" },
   understand: { ko: "이해한 내용", en: "What I Understand" },
   centralTension: { ko: "중심 긴장", en: "Central Tension" },
   oneMove: { ko: "테스트할 한 가지 조치", en: "One Move to Test" },

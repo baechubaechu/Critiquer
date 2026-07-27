@@ -1,0 +1,157 @@
+export const firstPassJsonSchema = {
+  type: "object",
+  additionalProperties: false,
+  required: ["analysis", "critique"],
+  properties: {
+    analysis: {
+      type: "object",
+      additionalProperties: false,
+      required: [
+        "projectType",
+        "projectIntent",
+        "coreProblems",
+        "statedConcepts",
+        "describedDesignStrategies",
+        "spatialTopics",
+        "circulationTopics",
+        "programTopics",
+        "structuralTopics",
+        "materialTopics",
+        "environmentalTopics",
+        "urbanTopics",
+        "statedStrengths",
+        "unresolvedIssues",
+        "missingInformation",
+        "centralIntentStrategyGap",
+      ],
+      properties: {
+        projectType: { type: "array", items: { type: "string" } },
+        projectIntent: { type: "string" },
+        coreProblems: { type: "array", items: { type: "string" } },
+        statedConcepts: { type: "array", items: { type: "string" } },
+        describedDesignStrategies: {
+          type: "array",
+          items: { type: "string" },
+        },
+        spatialTopics: { type: "array", items: { type: "string" } },
+        circulationTopics: { type: "array", items: { type: "string" } },
+        programTopics: { type: "array", items: { type: "string" } },
+        structuralTopics: { type: "array", items: { type: "string" } },
+        materialTopics: { type: "array", items: { type: "string" } },
+        environmentalTopics: { type: "array", items: { type: "string" } },
+        urbanTopics: { type: "array", items: { type: "string" } },
+        statedStrengths: { type: "array", items: { type: "string" } },
+        unresolvedIssues: { type: "array", items: { type: "string" } },
+        missingInformation: { type: "array", items: { type: "string" } },
+        centralIntentStrategyGap: { type: "string" },
+      },
+    },
+    critique: {
+      type: "object",
+      additionalProperties: false,
+      required: [
+        "interpretation",
+        "centralTension",
+        "critiquePoints",
+        "questionsForDesigner",
+        "suggestedExperiment",
+        "recommendationQueries",
+        "architectLens",
+        "disclaimer",
+      ],
+      properties: {
+        interpretation: {
+          type: "object",
+          additionalProperties: false,
+          required: ["projectIntent", "understoodStrategy", "missingInformation"],
+          properties: {
+            projectIntent: { type: "string" },
+            understoodStrategy: { type: "string" },
+            missingInformation: {
+              type: "array",
+              items: { type: "string" },
+            },
+          },
+        },
+        centralTension: {
+          type: "object",
+          additionalProperties: false,
+          required: ["title", "explanation"],
+          properties: {
+            title: { type: "string" },
+            explanation: { type: "string" },
+          },
+        },
+        critiquePoints: {
+          type: "array",
+          items: {
+            type: "object",
+            additionalProperties: false,
+            required: [
+              "id",
+              "title",
+              "observation",
+              "whyItMatters",
+              "designConsequence",
+              "confidence",
+            ],
+            properties: {
+              id: { type: "string" },
+              title: { type: "string" },
+              observation: { type: "string" },
+              whyItMatters: { type: "string" },
+              designConsequence: { type: "string" },
+              confidence: { type: "string", enum: ["high", "medium", "low"] },
+            },
+          },
+        },
+        questionsForDesigner: {
+          type: "array",
+          items: { type: "string" },
+        },
+        suggestedExperiment: {
+          type: "object",
+          additionalProperties: false,
+          required: ["title", "instruction", "expectedLearning"],
+          properties: {
+            title: { type: "string" },
+            instruction: { type: "string" },
+            expectedLearning: { type: "string" },
+          },
+        },
+        recommendationQueries: {
+          type: "array",
+          items: {
+            type: "object",
+            additionalProperties: false,
+            required: ["topic", "intent"],
+            properties: {
+              topic: { type: "string" },
+              intent: {
+                type: "string",
+                enum: [
+                  "closest-precedent",
+                  "alternative-approach",
+                  "critical-counterexample",
+                ],
+              },
+            },
+          },
+        },
+        architectLens: {
+          type: "object",
+          additionalProperties: false,
+          required: ["appliedPrinciples", "perspectiveLimitations"],
+          properties: {
+            appliedPrinciples: { type: "array", items: { type: "string" } },
+            perspectiveLimitations: {
+              type: "array",
+              items: { type: "string" },
+            },
+          },
+        },
+        disclaimer: { type: "string" },
+      },
+    },
+  },
+} as const;

@@ -10,13 +10,13 @@ The first implementation covers Phase 1 and Phase 2 from the development brief:
 - Critic selection interface
 - Project submission form
 - Critique settings step
-- Mock loading state
-- Mock result page
+- AI loading state
+- AI result page
 - Session-local draft and result persistence
 
-AI generation and retrieval logic are intentionally left for the next phases.
-Zod schemas, critic profile files, source types, and a small reference seed set
-now exist as Phase 3 groundwork.
+AI generation now starts with a Phase 4-1 one-call OpenAI Responses API route.
+Reference recommendations are still deterministic and local, so the app can
+avoid a second API call during early development.
 
 ## AI Model Plan
 
@@ -33,6 +33,19 @@ The model name is prepared in:
 
 - `.env.example`
 - `lib/ai/config.ts`
+- `app/api/critique/route.ts`
+
+## API Setup
+
+Create `.env.local` in the project root:
+
+```env
+OPENAI_API_KEY=your_api_key_here
+OPENAI_MODEL=gpt-5.6-luna
+```
+
+The API key is only read inside the Next.js server route. It is not exposed to
+the browser.
 
 ## Run Locally
 
@@ -62,9 +75,12 @@ The app is organized around the MVP user journey:
 - `app/page.tsx` renders the landing page.
 - `app/critique/page.tsx` renders the multi-step critique form.
 - `app/critique/[id]/page.tsx` renders a stored mock result.
+- `app/api/critique/route.ts` validates submissions and calls OpenAI from the
+  server.
 - `components/` contains reusable UI surfaces for critics, loading, form flow,
   and result display.
 - `lib/mock-data.ts` holds temporary critic summaries and mock critique output.
 
-The mock data layer is deliberately isolated so it can be replaced by typed
-critic profiles, validation schemas, reference data, and server AI routes.
+The mock data layer is still used for UI summaries and fallback display data.
+The production critique path now uses typed critic profiles, validation schemas,
+reference seed data, and a server AI route.

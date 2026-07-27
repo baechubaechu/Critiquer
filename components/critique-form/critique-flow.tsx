@@ -9,11 +9,12 @@ import {
   critiqueFocusOptions,
   critics,
   intensityOptions,
-  mockCritiqueResult,
   projectStageOptions,
   type ProjectDraft,
 } from "@/lib/mock-data";
 import { flowCopy, languageNames, text, type Language } from "@/lib/i18n";
+import type { CritiqueApiResponse } from "@/lib/ai/schemas";
+import { apiResponseToDisplayResult } from "@/lib/result-adapter";
 
 const emptyDraft: ProjectDraft = {
   criticId: "peter-zumthor",
@@ -105,23 +106,62 @@ export function CritiqueFlow() {
     setStep((current) => Math.min(current + 1, 3));
   }
 
-  function generateMockCritique() {
+  async function generateCritique() {
     if (!validateProjectFields()) {
       setStep(2);
       return;
     }
 
     setIsGenerating(true);
-    const id =
-      typeof crypto !== "undefined" && "randomUUID" in crypto
-        ? crypto.randomUUID()
-        : String(Date.now());
-    const result = mockCritiqueResult(draft, selectedCritic);
 
-    window.sessionStorage.setItem(`critiquer-result-${id}`, JSON.stringify(result));
-    window.setTimeout(() => {
+    try {
+      const response = await fetch("/api/critique", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(draft),
+      });
+
+      if (!response.ok) {
+        const body = (await response.json().catch(() => null)) as
+          | { error?: { message?: string } }
+          | null;
+        throw new Error(
+          body?.error?.message ||
+            (draft.language === "ko"
+              ? "비평 생성에 실패했습니다."
+              : "Failed to generate critique."),
+        );
+      }
+
+      const apiResponse = (await response.json()) as CritiqueApiResponse;
+      const id =
+        typeof crypto !== "undefined" && "randomUUID" in crypto
+          ? crypto.randomUUID()
+          : String(Date.now());
+      const result = apiResponseToDisplayResult({
+        apiResponse,
+        draft,
+        criticName: selectedCritic.displayName,
+      });
+
+      window.sessionStorage.setItem(
+        `critiquer-result-${id}`,
+        JSON.stringify(result),
+      );
       router.push(`/critique/${id}`);
-    }, 2200);
+    } catch (error) {
+      setErrors([
+        error instanceof Error
+          ? error.message
+          : draft.language === "ko"
+            ? "알 수 없는 오류가 발생했습니다."
+            : "An unknown error occurred.",
+      ]);
+    } finally {
+      setIsGenerating(false);
+    }
   }
 
   if (isGenerating) {
@@ -228,7 +268,7 @@ export function CritiqueFlow() {
             ) : (
               <button
                 type="button"
-                onClick={generateMockCritique}
+                onClick={generateCritique}
                 className="focus-ring border border-ink bg-ink px-5 py-3 text-sm uppercase tracking-normal text-paper transition hover:bg-paper hover:text-ink"
               >
                 {text(flowCopy.generate, draft.language)}
