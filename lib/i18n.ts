@@ -12,71 +12,70 @@ export const languageNames: Record<Language, string> = {
 };
 
 export const landingCopy = {
-  navAction: { ko: "비평 시작", en: "Begin" },
+  navAction: { ko: "크리틱 시작", en: "Begin" },
   eyebrow: {
-    ko: "근거 기반 건축 비평",
+    ko: "건축 스튜디오 크리틱",
     en: "Evidence-informed architectural critique",
   },
   headline: {
-    ko: "당신의 프로젝트를 다른 건축적 시선으로 읽어보세요.",
+    ko: "설계 의도와 도면 사이의 긴장을 읽어보세요.",
     en: "See your project through another architectural mind.",
   },
   description: {
-    ko: "프로젝트를 설명하고 비평 렌즈를 선택하면, 문헌과 작업에 근거한 해석을 바탕으로 스튜디오 크리틱에 가까운 피드백을 제공합니다.",
-    en: "Describe your project, select a critical lens, and receive a speculative studio-style critique grounded in documented architectural principles.",
+    ko: "프로젝트를 설명하고 교수님을 선택하면, 개념, 공간, 동선, 재료, 맥락을 기준으로 스튜디오 크리틱에 가까운 피드백을 생성합니다.",
+    en: "Describe your project, choose a professor, and receive a studio-style critique grounded in documented architectural principles.",
   },
   disclaimer: {
-    ko: "CRITIQUER는 실제 건축가나 비평가를 흉내 내지 않습니다. 글, 인터뷰, 프로젝트, 설계 원칙에 대한 구조화된 해석을 분석 렌즈로 사용합니다.",
-    en: "CRITIQUER does not impersonate real architects or critics. It uses structured interpretations of their writings, projects, and design priorities as analytical lenses.",
+    ko: "건축 거장들이 당신의 지도교수가 되어 설계 내용을 크리틱해드립니다.",
+    en: "Architectural masters become your studio professors and critique your design.",
   },
   howItWorks: { ko: "작동 방식", en: "How it works" },
   steps: [
     {
-      title: { ko: "비평가 선택", en: "Choose a critic" },
-      body: { ko: "하나의 건축적 렌즈를 고릅니다.", en: "Select one architectural lens." },
+      title: { ko: "교수 선택", en: "Choose a professor" },
+      body: { ko: "크리틱을 받을 교수님을 고릅니다.", en: "Choose your studio professor." },
     },
     {
-      title: { ko: "프로젝트 설명", en: "Describe the project" },
+      title: { ko: "프로젝트 입력", en: "Describe the project" },
       body: {
-        ko: "의도, 전략, 현재 고민을 적습니다.",
+        ko: "의도, 전략, 고민을 짧고 구체적으로 적습니다.",
         en: "Name intent, strategy, and doubt.",
       },
     },
     {
-      title: { ko: "긴장 읽기", en: "Read the tension" },
+      title: { ko: "핵심 긴장 확인", en: "Read the tension" },
       body: {
-        ko: "비평 포인트와 참고 사례를 검토합니다.",
+        ko: "크리틱 포인트와 다음 작업 방향을 확인합니다.",
         en: "Study critique points and references.",
       },
     },
   ],
-  lenses: { ko: "비평 렌즈", en: "Critical lenses" },
-  voices: { ko: "다섯 개의 출발점", en: "Five starting voices" },
-  startCritique: { ko: "비평 작성", en: "Start critique" },
+  voices: { ko: "교수 소개", en: "Meet the professors" },
+  startCritique: { ko: "크리틱 받기", en: "Get a critique" },
 };
 
 export const flowCopy = {
-  mockFlow: { ko: "AI 비평 흐름", en: "AI critique flow" },
+  mockFlow: { ko: "AI 크리틱 흐름", en: "AI critique flow" },
   steps: [
-    { ko: "비평가 선택", en: "Choose critic" },
-    { ko: "프로젝트 설명", en: "Describe project" },
-    { ko: "비평 설정", en: "Set critique" },
+    { ko: "교수 선택", en: "Choose professor" },
+    { ko: "프로젝트 입력", en: "Describe project" },
+    { ko: "크리틱 설정", en: "Set critique" },
   ],
   phaseNote: {
-    ko: "현재 버전은 OpenAI API로 비평을 생성하고, 레퍼런스는 로컬 데이터에서 가볍게 추천합니다.",
+    ko: "현재 버전은 OpenAI API로 크리틱을 생성하고, 로컬 레퍼런스 데이터에서 관련 사례를 가볍게 추천합니다.",
     en: "This version generates critiques with the OpenAI API and lightly recommends references from local data.",
   },
   requiredError: {
-    ko: "다음으로 넘어가기 전에 필수 프로젝트 항목을 입력해주세요.",
+    ko: "다음 단계로 가기 전에 필수 프로젝트 항목을 입력해주세요.",
     en: "Complete the required project fields before continuing.",
   },
   stepLabel: { ko: "단계", en: "Step" },
-  chooseCritic: { ko: "비평가를 선택하세요", en: "Choose your critic" },
+  chooseCritic: { ko: "교수님을 선택하세요", en: "Choose your professor" },
   describeProject: { ko: "프로젝트를 설명하세요", en: "Describe your project" },
-  setCritique: { ko: "비평 방식을 설정하세요", en: "Set the critique" },
+  setCritique: { ko: "크리틱 방식을 설정하세요", en: "Set the critique" },
   back: { ko: "이전", en: "Back" },
   continue: { ko: "계속", en: "Continue" },
-  generate: { ko: "AI 비평 생성", en: "Generate AI critique" },
+  generate: { ko: "AI 크리틱 생성", en: "Generate AI critique" },
   fields: {
     title: { ko: "프로젝트 제목", en: "Project title" },
     oneLineSummary: { ko: "한 문장 요약", en: "One-sentence project summary" },
@@ -99,30 +98,30 @@ export const flowCopy = {
     materials: { ko: "재료", en: "Materials" },
     environmentalStrategy: { ko: "환경 전략", en: "Environmental strategy" },
     stage: { ko: "프로젝트 단계", en: "Project stage" },
-    reviewFocus: { ko: "비평 초점", en: "Critique focus" },
-    intensity: { ko: "비평 강도", en: "Critique intensity" },
+    reviewFocus: { ko: "크리틱 초점", en: "Critique focus" },
+    intensity: { ko: "크리틱 강도", en: "Critique intensity" },
     language: { ko: "출력 언어", en: "Language" },
   },
 };
 
 export const loadingCopy = {
-  label: { ko: "AI 비평 생성 중", en: "Generating AI critique" },
+  label: { ko: "AI 크리틱 생성 중", en: "Generating AI critique" },
   headline: {
-    ko: (criticName: string) => `${criticName}의 렌즈로 프로젝트를 읽는 중입니다.`,
-    en: (criticName: string) => `Reading the project through ${criticName}.`,
+    ko: (criticName: string) => `${criticName} 교수님이 프로젝트를 읽는 중입니다.`,
+    en: (criticName: string) => `Professor ${criticName} is reviewing your project.`,
   },
   stages: {
     ko: [
       "프로젝트 읽기",
-      "중심 긴장 찾기",
-      "선택한 비평 렌즈 적용",
+      "핵심 긴장 찾기",
+      "선택한 교수님의 판단 기준 적용",
       "관련 레퍼런스 탐색",
-      "비평문 준비",
+      "크리틱 정리",
     ],
     en: [
       "Reading the project",
       "Identifying the central tension",
-      "Applying the selected critical lens",
+      "Applying the professor's review criteria",
       "Searching relevant references",
       "Preparing the critique",
     ],
@@ -130,21 +129,21 @@ export const loadingCopy = {
 };
 
 export const resultCopy = {
-  anotherCritic: { ko: "다른 비평가", en: "Another critic" },
+  anotherCritic: { ko: "다른 교수님 선택", en: "Choose another professor" },
   mockSheet: { ko: "AI 리뷰 시트", en: "AI review sheet" },
   understand: { ko: "이해한 내용", en: "What I Understand" },
-  centralTension: { ko: "중심 긴장", en: "Central Tension" },
+  centralTension: { ko: "핵심 긴장", en: "Central Tension" },
   oneMove: { ko: "테스트할 한 가지 조치", en: "One Move to Test" },
   actions: { ko: "작업", en: "Actions" },
   copy: { ko: "결과 복사", en: "Copy result" },
   copied: { ko: "복사됨", en: "Copied" },
   returnEdit: { ko: "프로젝트 수정으로 돌아가기", en: "Return to edit project" },
-  compare: { ko: "비평가 비교 준비 중", en: "Compare critics placeholder" },
-  critiquePoints: { ko: "주요 비평 포인트", en: "Main Critique Points" },
-  questions: { ko: "디자이너에게 던지는 질문", en: "Questions for the Designer" },
+  compare: { ko: "크리틱 비교 준비 중", en: "Compare critics placeholder" },
+  critiquePoints: { ko: "주요 크리틱 포인트", en: "Main Critique Points" },
+  questions: { ko: "디자이너에게 남길 질문", en: "Questions for the Designer" },
   references: { ko: "검토할 레퍼런스", en: "References to Examine" },
   principles: {
-    ko: "적용된 건축 원칙",
+    ko: "적용한 건축 원칙",
     en: "Applied Architectural Principles",
   },
   limits: { ko: "이 관점의 한계", en: "Limits of This Perspective" },

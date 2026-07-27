@@ -68,6 +68,17 @@ npm run lint
 npm run build
 ```
 
+## Editing Text
+
+Most Korean and English UI copy is centralized in `lib/i18n.ts`.
+Critique lens cards and fallback sample results live in `lib/mock-data.ts`.
+
+For a beginner-friendly Korean guide, see:
+
+```text
+docs/text-editing-guide.md
+```
+
 ## Current Architecture
 
 The app is organized around the MVP user journey:

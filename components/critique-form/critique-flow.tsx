@@ -130,7 +130,7 @@ export function CritiqueFlow() {
         throw new Error(
           body?.error?.message ||
             (draft.language === "ko"
-              ? "비평 생성에 실패했습니다."
+              ? "크리틱 생성에 실패했습니다."
               : "Failed to generate critique."),
         );
       }
@@ -175,7 +175,11 @@ export function CritiqueFlow() {
 
   return (
     <main className="min-h-screen bg-paper text-ink">
-      <header className="border-b border-ink bg-paper/95">
+      <header
+        data-feedback-target="critique-header"
+        data-feedback-label="크리틱 작성 페이지 상단"
+        className="border-b border-ink bg-paper/95"
+      >
         <div className="mx-auto grid max-w-7xl gap-4 px-5 py-5 sm:grid-cols-[1fr_auto] sm:items-center sm:px-8 lg:px-10">
           <Link href="/" className="font-serif text-3xl">
             CRITIQUER
@@ -193,7 +197,11 @@ export function CritiqueFlow() {
       </header>
 
       <section className="mx-auto grid max-w-7xl gap-6 px-5 py-6 sm:px-8 lg:grid-cols-[340px_1fr] lg:px-10">
-        <aside className="lg:sticky lg:top-6 lg:self-start">
+        <aside
+          data-feedback-target="critique-progress"
+          data-feedback-label="진행 단계와 선택 정보"
+          className="lg:sticky lg:top-6 lg:self-start"
+        >
           <div className="border border-ink bg-ink p-5 text-paper sheet-shadow">
             <p className="text-xs uppercase tracking-normal text-paper/55">
               {draft.language === "ko" ? "리뷰 설정" : "Review Setup"}
@@ -237,7 +245,9 @@ export function CritiqueFlow() {
 
           <div className="mt-4 border border-rule bg-white/35 p-5">
             <p className="text-xs uppercase tracking-normal text-muted">
-              {draft.language === "ko" ? "선택한 렌즈" : "Selected Lens"}
+              {draft.language === "ko"
+                ? "선택한 교수님"
+                : "Selected Professor"}
             </p>
             <h2 className="mt-3 font-serif text-2xl">
               {selectedCritic.displayName}
@@ -248,7 +258,11 @@ export function CritiqueFlow() {
           </div>
         </aside>
 
-        <div className="border border-ink bg-paper sheet-shadow">
+        <div
+          data-feedback-target="critique-form"
+          data-feedback-label="크리틱 입력 영역"
+          className="border border-ink bg-paper sheet-shadow"
+        >
           {errors.length > 0 ? (
             <div className="border-b border-clay bg-white/70 p-4 text-sm text-clay">
               {errors.map((error) => (
@@ -275,7 +289,11 @@ export function CritiqueFlow() {
             ) : null}
           </div>
 
-          <div className="flex flex-col-reverse gap-3 border-t border-ink bg-white/35 p-5 sm:flex-row sm:items-center sm:justify-between">
+          <div
+            data-feedback-target="critique-actions"
+            data-feedback-label="이전 및 다음 버튼"
+            className="flex flex-col-reverse gap-3 border-t border-ink bg-white/35 p-5 sm:flex-row sm:items-center sm:justify-between"
+          >
             <button
               type="button"
               onClick={() => setStep((current) => Math.max(current - 1, 1))}
@@ -318,7 +336,10 @@ function StepChooseCritic({
   onSelect: (criticId: string) => void;
 }) {
   return (
-    <section>
+    <section
+      data-feedback-target="critique-professor-selection"
+      data-feedback-label="교수 선택 단계"
+    >
       <div className="mb-6 grid gap-3 border-b border-ink pb-5 md:grid-cols-[auto_1fr] md:items-end">
         <p className="text-sm uppercase tracking-normal text-muted">
           {text(flowCopy.stepLabel, language)} 1
@@ -350,7 +371,10 @@ function StepProjectDescription({
   updateDraft: (field: keyof ProjectDraft, value: string) => void;
 }) {
   return (
-    <section>
+    <section
+      data-feedback-target="critique-project-description"
+      data-feedback-label="프로젝트 설명 단계"
+    >
       <div className="mb-6 grid gap-3 border-b border-ink pb-5 md:grid-cols-[auto_1fr] md:items-end">
         <p className="text-sm uppercase tracking-normal text-muted">
           {text(flowCopy.stepLabel, draft.language)} 2
@@ -461,7 +485,10 @@ function StepCritiqueSettings({
   updateDraft: (field: keyof ProjectDraft, value: string) => void;
 }) {
   return (
-    <section>
+    <section
+      data-feedback-target="critique-settings"
+      data-feedback-label="크리틱 설정 단계"
+    >
       <div className="mb-6 grid gap-3 border-b border-ink pb-5 md:grid-cols-[auto_1fr] md:items-end">
         <p className="text-sm uppercase tracking-normal text-muted">
           {text(flowCopy.stepLabel, draft.language)} 3

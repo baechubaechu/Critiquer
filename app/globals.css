@@ -64,3 +64,15 @@ button {
   writing-mode: vertical-rl;
   text-orientation: mixed;
 }
+
+body[data-feedback-picking="true"] [data-feedback-target] {
+  cursor: crosshair;
+  outline: 2px dashed transparent;
+  outline-offset: 4px;
+}
+
+body[data-feedback-picking="true"] [data-feedback-target]:hover,
+[data-feedback-selected="true"] {
+  outline: 2px solid #d14b2b;
+  outline-offset: 4px;
+}
