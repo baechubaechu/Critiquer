@@ -1,0 +1,51 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-sans: "Inter", "Segoe UI", Arial, sans-serif;
+  --font-serif: "Georgia", "Times New Roman", serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: #f6f3ed;
+  color: #181715;
+  font-family: var(--font-sans);
+}
+
+::selection {
+  background: #181715;
+  color: #f6f3ed;
+}
+
+input,
+textarea,
+select,
+button {
+  font: inherit;
+}
+
+.architectural-grid {
+  background-image:
+    linear-gradient(rgba(24, 23, 21, 0.055) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(24, 23, 21, 0.055) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+
+.focus-ring {
+  outline: 2px solid transparent;
+  outline-offset: 3px;
+}
+
+.focus-ring:focus-visible {
+  outline-color: #181715;
+}
