@@ -2,6 +2,9 @@
 node_modules/
 out/
 dist/
+coverage/
+.vercel/
+.turbo/
 .env
 .env*.local
 npm-debug.log*
