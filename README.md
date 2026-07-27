@@ -14,8 +14,25 @@ The first implementation covers Phase 1 and Phase 2 from the development brief:
 - Mock result page
 - Session-local draft and result persistence
 
-AI generation, Zod schemas, critic profile files, source-backed reference data,
-and retrieval logic are intentionally left for the next phases.
+AI generation and retrieval logic are intentionally left for the next phases.
+Zod schemas, critic profile files, source types, and a small reference seed set
+now exist as Phase 3 groundwork.
+
+## AI Model Plan
+
+Development should default to:
+
+```text
+gpt-5.6-luna
+```
+
+This keeps early API testing cheaper. Higher-quality review modes can later test
+`gpt-5.6-terra` or `gpt-5.6-sol` after the core flow is working.
+
+The model name is prepared in:
+
+- `.env.example`
+- `lib/ai/config.ts`
 
 ## Run Locally
 
