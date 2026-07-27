@@ -13,6 +13,7 @@ import {
   projectStageOptions,
   type ProjectDraft,
 } from "@/lib/mock-data";
+import { flowCopy, languageNames, text, type Language } from "@/lib/i18n";
 
 const emptyDraft: ProjectDraft = {
   criticId: "peter-zumthor",
@@ -55,7 +56,17 @@ export function CritiqueFlow() {
   useEffect(() => {
     const saved = window.sessionStorage.getItem("critiquer-draft");
     if (saved) {
-      setDraft(JSON.parse(saved) as ProjectDraft);
+      const parsed = JSON.parse(saved) as ProjectDraft;
+      setDraft({
+        ...parsed,
+        language: parsed.language === "en" ? "en" : "ko",
+      });
+      return;
+    }
+
+    const savedLanguage = window.sessionStorage.getItem("critiquer-language");
+    if (savedLanguage === "ko" || savedLanguage === "en") {
+      setDraft((current) => ({ ...current, language: savedLanguage }));
     }
   }, []);
 
@@ -70,13 +81,16 @@ export function CritiqueFlow() {
 
   function updateDraft(field: keyof ProjectDraft, value: string) {
     setDraft((current) => ({ ...current, [field]: value }));
+    if (field === "language" && (value === "ko" || value === "en")) {
+      window.sessionStorage.setItem("critiquer-language", value);
+    }
     setErrors([]);
   }
 
   function validateProjectFields() {
     const missing = requiredFields.filter((field) => !draft[field].trim());
     if (missing.length > 0) {
-      setErrors(["Complete the required project fields before continuing."]);
+      setErrors([text(flowCopy.requiredError, draft.language)]);
       return false;
     }
 
@@ -111,7 +125,12 @@ export function CritiqueFlow() {
   }
 
   if (isGenerating) {
-    return <LoadingCritique criticName={selectedCritic.displayName} />;
+    return (
+      <LoadingCritique
+        criticName={selectedCritic.displayName}
+        language={draft.language}
+      />
+    );
   }
 
   return (
@@ -121,45 +140,46 @@ export function CritiqueFlow() {
           <Link href="/" className="font-serif text-2xl">
             CRITIQUER
           </Link>
-          <span className="text-sm uppercase tracking-normal text-muted">
-            Mock critique flow
-          </span>
+          <div className="flex items-center gap-3">
+            <LanguageToggle
+              language={draft.language}
+              onChange={(language) => updateDraft("language", language)}
+            />
+            <span className="hidden text-sm uppercase tracking-normal text-muted sm:inline">
+              {text(flowCopy.mockFlow, draft.language)}
+            </span>
+          </div>
         </div>
       </header>
 
       <section className="mx-auto grid max-w-7xl gap-8 px-5 py-8 sm:px-8 lg:grid-cols-[280px_1fr] lg:px-10">
         <aside className="lg:sticky lg:top-8 lg:self-start">
           <ol className="grid gap-2 border-y border-rule py-4">
-            {[
-              ["1", "Choose critic"],
-              ["2", "Describe project"],
-              ["3", "Set critique"],
-            ].map(([number, label]) => (
-              <li key={number}>
+            {flowCopy.steps.map((label, index) => (
+              <li key={index}>
                 <button
                   type="button"
-                  onClick={() => setStep(Number(number))}
+                  onClick={() => setStep(index + 1)}
                   className="focus-ring flex w-full items-center gap-3 px-2 py-3 text-left"
                 >
                   <span
                     className={
-                      step === Number(number)
+                      step === index + 1
                         ? "grid h-8 w-8 place-items-center bg-ink text-paper"
                         : "grid h-8 w-8 place-items-center border border-rule text-muted"
                     }
                   >
-                    {number}
+                    {index + 1}
                   </span>
-                  <span className={step === Number(number) ? "font-semibold" : ""}>
-                    {label}
+                  <span className={step === index + 1 ? "font-semibold" : ""}>
+                    {text(label, draft.language)}
                   </span>
                 </button>
               </li>
             ))}
           </ol>
           <p className="mt-5 text-sm leading-6 text-muted">
-            This first build uses mock data only. The AI route and reference
-            database start in Phase 3 and Phase 4.
+            {text(flowCopy.phaseNote, draft.language)}
           </p>
         </aside>
 
@@ -174,6 +194,7 @@ export function CritiqueFlow() {
 
           {step === 1 ? (
             <StepChooseCritic
+              language={draft.language}
               selectedCriticId={draft.criticId}
               onSelect={(criticId) => updateDraft("criticId", criticId)}
             />
@@ -194,7 +215,7 @@ export function CritiqueFlow() {
               className="focus-ring border border-rule px-5 py-3 text-sm uppercase tracking-normal text-muted transition hover:border-ink hover:text-ink"
               disabled={step === 1}
             >
-              Back
+              {text(flowCopy.back, draft.language)}
             </button>
             {step < 3 ? (
               <button
@@ -202,7 +223,7 @@ export function CritiqueFlow() {
                 onClick={moveNext}
                 className="focus-ring border border-ink bg-ink px-5 py-3 text-sm uppercase tracking-normal text-paper transition hover:bg-paper hover:text-ink"
               >
-                Continue
+                {text(flowCopy.continue, draft.language)}
               </button>
             ) : (
               <button
@@ -210,7 +231,7 @@ export function CritiqueFlow() {
                 onClick={generateMockCritique}
                 className="focus-ring border border-ink bg-ink px-5 py-3 text-sm uppercase tracking-normal text-paper transition hover:bg-paper hover:text-ink"
               >
-                Generate mock critique
+                {text(flowCopy.generate, draft.language)}
               </button>
             )}
           </div>
@@ -221,23 +242,30 @@ export function CritiqueFlow() {
 }
 
 function StepChooseCritic({
+  language,
   selectedCriticId,
   onSelect,
 }: {
+  language: Language;
   selectedCriticId: string;
   onSelect: (criticId: string) => void;
 }) {
   return (
     <section>
       <div className="mb-6 border-b border-rule pb-5">
-        <p className="text-sm uppercase tracking-normal text-muted">Step 1</p>
-        <h1 className="mt-2 font-serif text-5xl">Choose your critic</h1>
+        <p className="text-sm uppercase tracking-normal text-muted">
+          {text(flowCopy.stepLabel, language)} 1
+        </p>
+        <h1 className="mt-2 font-serif text-5xl">
+          {text(flowCopy.chooseCritic, language)}
+        </h1>
       </div>
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {critics.map((critic) => (
           <CriticPreviewCard
             key={critic.id}
             critic={critic}
+            language={language}
             selected={selectedCriticId === critic.id}
             onSelect={onSelect}
           />
@@ -257,31 +285,35 @@ function StepProjectDescription({
   return (
     <section>
       <div className="mb-6 border-b border-rule pb-5">
-        <p className="text-sm uppercase tracking-normal text-muted">Step 2</p>
-        <h1 className="mt-2 font-serif text-5xl">Describe your project</h1>
+        <p className="text-sm uppercase tracking-normal text-muted">
+          {text(flowCopy.stepLabel, draft.language)} 2
+        </p>
+        <h1 className="mt-2 font-serif text-5xl">
+          {text(flowCopy.describeProject, draft.language)}
+        </h1>
       </div>
       <div className="grid gap-5">
         <TextInput
-          label="Project title"
+          label={text(flowCopy.fields.title, draft.language)}
           value={draft.title}
           required
           onChange={(value) => updateDraft("title", value)}
         />
         <TextArea
-          label="One-sentence project summary"
+          label={text(flowCopy.fields.oneLineSummary, draft.language)}
           value={draft.oneLineSummary}
           required
           onChange={(value) => updateDraft("oneLineSummary", value)}
         />
         <TwoColumn>
           <TextArea
-            label="Problem the project attempts to solve"
+            label={text(flowCopy.fields.problem, draft.language)}
             value={draft.problem}
             required
             onChange={(value) => updateDraft("problem", value)}
           />
           <TextArea
-            label="Core design concept"
+            label={text(flowCopy.fields.concept, draft.language)}
             value={draft.concept}
             required
             onChange={(value) => updateDraft("concept", value)}
@@ -289,13 +321,13 @@ function StepProjectDescription({
         </TwoColumn>
         <TwoColumn>
           <TextArea
-            label="Main design strategies"
+            label={text(flowCopy.fields.designStrategies, draft.language)}
             value={draft.designStrategies}
             required
             onChange={(value) => updateDraft("designStrategies", value)}
           />
           <TextArea
-            label="Current concern or question"
+            label={text(flowCopy.fields.critiqueRequest, draft.language)}
             value={draft.critiqueRequest}
             required
             onChange={(value) => updateDraft("critiqueRequest", value)}
@@ -303,48 +335,48 @@ function StepProjectDescription({
         </TwoColumn>
         <TwoColumn>
           <TextInput
-            label="Site and context"
+            label={text(flowCopy.fields.site, draft.language)}
             value={draft.site}
             onChange={(value) => updateDraft("site", value)}
           />
           <TextInput
-            label="Program"
+            label={text(flowCopy.fields.program, draft.language)}
             value={draft.program}
             onChange={(value) => updateDraft("program", value)}
           />
         </TwoColumn>
         <TwoColumn>
           <TextInput
-            label="Primary users"
+            label={text(flowCopy.fields.users, draft.language)}
             value={draft.users}
             onChange={(value) => updateDraft("users", value)}
           />
           <TextInput
-            label="Spatial organization"
+            label={text(flowCopy.fields.spatialOrganization, draft.language)}
             value={draft.spatialOrganization}
             onChange={(value) => updateDraft("spatialOrganization", value)}
           />
         </TwoColumn>
         <TwoColumn>
           <TextInput
-            label="Circulation"
+            label={text(flowCopy.fields.circulation, draft.language)}
             value={draft.circulation}
             onChange={(value) => updateDraft("circulation", value)}
           />
           <TextInput
-            label="Structure"
+            label={text(flowCopy.fields.structure, draft.language)}
             value={draft.structure}
             onChange={(value) => updateDraft("structure", value)}
           />
         </TwoColumn>
         <TwoColumn>
           <TextInput
-            label="Materials"
+            label={text(flowCopy.fields.materials, draft.language)}
             value={draft.materials}
             onChange={(value) => updateDraft("materials", value)}
           />
           <TextInput
-            label="Environmental strategy"
+            label={text(flowCopy.fields.environmentalStrategy, draft.language)}
             value={draft.environmentalStrategy}
             onChange={(value) => updateDraft("environmentalStrategy", value)}
           />
@@ -364,39 +396,81 @@ function StepCritiqueSettings({
   return (
     <section>
       <div className="mb-6 border-b border-rule pb-5">
-        <p className="text-sm uppercase tracking-normal text-muted">Step 3</p>
-        <h1 className="mt-2 font-serif text-5xl">Set the critique</h1>
+        <p className="text-sm uppercase tracking-normal text-muted">
+          {text(flowCopy.stepLabel, draft.language)} 3
+        </p>
+        <h1 className="mt-2 font-serif text-5xl">
+          {text(flowCopy.setCritique, draft.language)}
+        </h1>
       </div>
       <div className="grid gap-6">
         <SelectField
-          label="Project stage"
+          label={text(flowCopy.fields.stage, draft.language)}
           value={draft.stage}
-          options={projectStageOptions}
+          options={projectStageOptions.map((option) => ({
+            value: option.value,
+            label: text(option.label, draft.language),
+          }))}
           onChange={(value) => updateDraft("stage", value)}
         />
         <SelectField
-          label="Critique focus"
+          label={text(flowCopy.fields.reviewFocus, draft.language)}
           value={draft.reviewFocus}
-          options={critiqueFocusOptions}
+          options={critiqueFocusOptions.map((option) => ({
+            value: option.value,
+            label: text(option.label, draft.language),
+          }))}
           onChange={(value) => updateDraft("reviewFocus", value)}
         />
         <RadioGroup
-          label="Critique intensity"
+          label={text(flowCopy.fields.intensity, draft.language)}
           value={draft.intensity}
-          options={intensityOptions}
+          options={intensityOptions.map((option) => ({
+            value: option.value,
+            label: text(option.label, draft.language),
+            description: text(option.description, draft.language),
+          }))}
           onChange={(value) => updateDraft("intensity", value)}
         />
         <RadioGroup
-          label="Language"
+          label={text(flowCopy.fields.language, draft.language)}
           value={draft.language}
           options={[
-            { value: "ko", label: "Korean" },
-            { value: "en", label: "English" },
+            { value: "ko", label: languageNames.ko },
+            { value: "en", label: languageNames.en },
           ]}
           onChange={(value) => updateDraft("language", value)}
         />
       </div>
     </section>
+  );
+}
+
+function LanguageToggle({
+  language,
+  onChange,
+}: {
+  language: Language;
+  onChange: (language: Language) => void;
+}) {
+  return (
+    <div className="grid grid-cols-2 border border-rule" aria-label="Language">
+      {(["ko", "en"] as const).map((option) => (
+        <button
+          key={option}
+          type="button"
+          onClick={() => onChange(option)}
+          className={
+            language === option
+              ? "bg-ink px-3 py-2 text-xs uppercase tracking-normal text-paper"
+              : "px-3 py-2 text-xs uppercase tracking-normal text-muted transition hover:text-ink"
+          }
+          aria-pressed={language === option}
+        >
+          {languageNames[option]}
+        </button>
+      ))}
+    </div>
   );
 }
 

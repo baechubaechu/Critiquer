@@ -1,14 +1,17 @@
 import clsx from "clsx";
 import type { CriticSummary } from "@/lib/mock-data";
+import { text, type Language } from "@/lib/i18n";
 
 type CriticPreviewCardProps = {
   critic: CriticSummary;
+  language?: Language;
   selected?: boolean;
   onSelect?: (criticId: string) => void;
 };
 
 export function CriticPreviewCard({
   critic,
+  language = "ko",
   selected = false,
   onSelect,
 }: CriticPreviewCardProps) {
@@ -27,15 +30,17 @@ export function CriticPreviewCard({
           {critic.initials}
         </div>
         <span className="text-right text-xs uppercase tracking-normal text-muted">
-          {critic.lens}
+          {text(critic.lens, language)}
         </span>
       </div>
       <h3 className="mt-8 font-serif text-2xl leading-tight">
         {critic.displayName}
       </h3>
-      <p className="mt-3 text-sm leading-6 text-muted">{critic.summary}</p>
+      <p className="mt-3 text-sm leading-6 text-muted">
+        {text(critic.summary, language)}
+      </p>
       <div className="mt-6 flex flex-wrap gap-2">
-        {critic.themes.map((theme) => (
+        {critic.themes[language].map((theme) => (
           <span
             key={theme}
             className="border border-rule px-2 py-1 text-xs text-muted"
@@ -45,7 +50,7 @@ export function CriticPreviewCard({
         ))}
       </div>
       <p className="mt-6 border-t border-rule pt-4 text-sm leading-6">
-        {critic.examines}
+        {text(critic.examines, language)}
       </p>
     </>
   );

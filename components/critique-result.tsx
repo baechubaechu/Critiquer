@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import type { MockResult } from "@/lib/mock-data";
 import { fallbackResult } from "@/lib/mock-data";
+import { resultCopy, text } from "@/lib/i18n";
 
 export function CritiqueResult({ resultId }: { resultId: string }) {
   const [result, setResult] = useState<MockResult>(fallbackResult);
@@ -20,7 +21,7 @@ export function CritiqueResult({ resultId }: { resultId: string }) {
     const text = [
       result.title,
       result.disclaimer,
-      `Central Tension: ${result.centralTension.title}`,
+      `${resultCopy.centralTension[result.language]}: ${result.centralTension.title}`,
       result.centralTension.explanation,
       ...result.critiquePoints.map(
         (point) =>
@@ -44,7 +45,7 @@ export function CritiqueResult({ resultId }: { resultId: string }) {
             href="/critique"
             className="focus-ring border border-ink px-4 py-2 text-sm uppercase tracking-normal transition hover:bg-ink hover:text-paper"
           >
-            Another critic
+            {text(resultCopy.anotherCritic, result.language)}
           </Link>
         </div>
       </header>
@@ -53,7 +54,7 @@ export function CritiqueResult({ resultId }: { resultId: string }) {
         <div className="grid gap-8 border-b border-ink pb-8 lg:grid-cols-[0.8fr_1.2fr]">
           <div>
             <p className="text-sm uppercase tracking-normal text-muted">
-              Mock review sheet
+              {text(resultCopy.mockSheet, result.language)}
             </p>
             <h1 className="mt-3 font-serif text-5xl leading-tight">
               {result.title}
@@ -63,20 +64,22 @@ export function CritiqueResult({ resultId }: { resultId: string }) {
             </p>
           </div>
           <section className="border-l-0 border-rule lg:border-l lg:pl-8">
-            <h2 className="font-serif text-3xl">What I Understand</h2>
+            <h2 className="font-serif text-3xl">
+              {text(resultCopy.understand, result.language)}
+            </h2>
             <p className="mt-4 text-lg leading-8">{result.interpretation}</p>
           </section>
         </div>
 
         <div className="grid gap-8 py-8 lg:grid-cols-[0.72fr_1.28fr]">
           <aside className="space-y-5">
-            <Section title="Central Tension">
+            <Section title={text(resultCopy.centralTension, result.language)}>
               <h3 className="text-xl font-semibold">{result.centralTension.title}</h3>
               <p className="mt-3 text-sm leading-6 text-muted">
                 {result.centralTension.explanation}
               </p>
             </Section>
-            <Section title="One Move to Test">
+            <Section title={text(resultCopy.oneMove, result.language)}>
               <h3 className="text-xl font-semibold">
                 {result.suggestedExperiment.title}
               </h3>
@@ -84,34 +87,36 @@ export function CritiqueResult({ resultId }: { resultId: string }) {
                 {result.suggestedExperiment.instruction}
               </p>
             </Section>
-            <Section title="Actions">
+            <Section title={text(resultCopy.actions, result.language)}>
               <div className="grid gap-3">
                 <button
                   type="button"
                   onClick={copyResult}
                   className="focus-ring border border-ink px-4 py-3 text-left text-sm uppercase tracking-normal transition hover:bg-ink hover:text-paper"
                 >
-                  {copied ? "Copied" : "Copy result"}
+                  {copied
+                    ? text(resultCopy.copied, result.language)
+                    : text(resultCopy.copy, result.language)}
                 </button>
                 <Link
                   href="/critique"
                   className="focus-ring border border-rule px-4 py-3 text-sm uppercase tracking-normal text-muted transition hover:border-ink hover:text-ink"
                 >
-                  Return to edit project
+                  {text(resultCopy.returnEdit, result.language)}
                 </Link>
                 <button
                   type="button"
                   disabled
                   className="border border-rule px-4 py-3 text-left text-sm uppercase tracking-normal text-muted opacity-60"
                 >
-                  Compare critics placeholder
+                  {text(resultCopy.compare, result.language)}
                 </button>
               </div>
             </Section>
           </aside>
 
           <div className="space-y-8">
-            <Section title="Main Critique Points">
+            <Section title={text(resultCopy.critiquePoints, result.language)}>
               <div className="grid gap-4">
                 {result.critiquePoints.map((point) => (
                   <article key={point.id} className="border border-rule bg-white/35 p-5">
@@ -130,7 +135,7 @@ export function CritiqueResult({ resultId }: { resultId: string }) {
               </div>
             </Section>
 
-            <Section title="Questions for the Designer">
+            <Section title={text(resultCopy.questions, result.language)}>
               <ol className="grid gap-3">
                 {result.questions.map((question, index) => (
                   <li key={question} className="grid grid-cols-[40px_1fr] gap-3">
@@ -141,7 +146,7 @@ export function CritiqueResult({ resultId }: { resultId: string }) {
               </ol>
             </Section>
 
-            <Section title="References to Examine">
+            <Section title={text(resultCopy.references, result.language)}>
               <div className="grid gap-4 md:grid-cols-3">
                 {result.references.map((reference) => (
                   <article key={reference.title} className="border border-rule p-4">
@@ -157,7 +162,7 @@ export function CritiqueResult({ resultId }: { resultId: string }) {
               </div>
             </Section>
 
-            <Section title="Applied Architectural Principles">
+            <Section title={text(resultCopy.principles, result.language)}>
               <div className="flex flex-wrap gap-2">
                 {result.principles.map((principle) => (
                   <span key={principle} className="border border-rule px-3 py-2 text-sm">
@@ -167,7 +172,7 @@ export function CritiqueResult({ resultId }: { resultId: string }) {
               </div>
             </Section>
 
-            <Section title="Limits of This Perspective">
+            <Section title={text(resultCopy.limits, result.language)}>
               <p className="text-sm leading-6 text-muted">{result.limits}</p>
             </Section>
           </div>
