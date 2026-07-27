@@ -58,7 +58,7 @@ export async function POST(request: Request) {
       clearTimeout(timeout);
     }
   } catch (error) {
-    console.error("[CRITIQUER_API_ERROR]", error);
+    logSafeApiError(error);
 
     if (error instanceof ZodError) {
       return safeError(
@@ -73,6 +73,8 @@ export async function POST(request: Request) {
       const message =
         status === 503
           ? "OpenAI API 키가 아직 설정되지 않았습니다. .env.local에 OPENAI_API_KEY를 추가해주세요."
+          : status === 401
+            ? "OpenAI API 키가 올바르지 않습니다. .env.local의 OPENAI_API_KEY 값을 다시 확인해주세요."
           : "AI 비평 생성 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요.";
 
       return safeError("openai-request-failed", message, status);
@@ -92,6 +94,34 @@ export async function POST(request: Request) {
       500,
     );
   }
+}
+
+function logSafeApiError(error: unknown) {
+  if (error instanceof OpenAIRequestError) {
+    console.error("[CRITIQUER_API_ERROR]", {
+      name: error.name,
+      status: error.status,
+    });
+    return;
+  }
+
+  if (error instanceof ZodError) {
+    console.error("[CRITIQUER_API_ERROR]", {
+      name: error.name,
+      issues: error.issues.length,
+    });
+    return;
+  }
+
+  if (error instanceof Error) {
+    console.error("[CRITIQUER_API_ERROR]", {
+      name: error.name,
+      message: error.message,
+    });
+    return;
+  }
+
+  console.error("[CRITIQUER_API_ERROR]", { name: "UnknownError" });
 }
 
 function safeError(code: string, message: string, status: number) {
