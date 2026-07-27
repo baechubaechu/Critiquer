@@ -175,9 +175,9 @@ export function CritiqueFlow() {
 
   return (
     <main className="min-h-screen bg-paper text-ink">
-      <header className="border-b border-rule">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-5 sm:px-8 lg:px-10">
-          <Link href="/" className="font-serif text-2xl">
+      <header className="border-b border-ink bg-paper/95">
+        <div className="mx-auto grid max-w-7xl gap-4 px-5 py-5 sm:grid-cols-[1fr_auto] sm:items-center sm:px-8 lg:px-10">
+          <Link href="/" className="font-serif text-3xl">
             CRITIQUER
           </Link>
           <div className="flex items-center gap-3">
@@ -192,21 +192,37 @@ export function CritiqueFlow() {
         </div>
       </header>
 
-      <section className="mx-auto grid max-w-7xl gap-8 px-5 py-8 sm:px-8 lg:grid-cols-[280px_1fr] lg:px-10">
-        <aside className="lg:sticky lg:top-8 lg:self-start">
-          <ol className="grid gap-2 border-y border-rule py-4">
+      <section className="mx-auto grid max-w-7xl gap-6 px-5 py-6 sm:px-8 lg:grid-cols-[340px_1fr] lg:px-10">
+        <aside className="lg:sticky lg:top-6 lg:self-start">
+          <div className="border border-ink bg-ink p-5 text-paper sheet-shadow">
+            <p className="text-xs uppercase tracking-normal text-paper/55">
+              {draft.language === "ko" ? "리뷰 설정" : "Review Setup"}
+            </p>
+            <h1 className="mt-4 font-serif text-3xl leading-tight">
+              {step === 1
+                ? text(flowCopy.chooseCritic, draft.language)
+                : step === 2
+                  ? text(flowCopy.describeProject, draft.language)
+                  : text(flowCopy.setCritique, draft.language)}
+            </h1>
+            <p className="mt-4 text-sm leading-6 text-paper/68">
+              {text(flowCopy.phaseNote, draft.language)}
+            </p>
+          </div>
+
+          <ol className="mt-4 grid gap-2 border-y border-rule py-4">
             {flowCopy.steps.map((label, index) => (
               <li key={index}>
                 <button
                   type="button"
                   onClick={() => setStep(index + 1)}
-                  className="focus-ring flex w-full items-center gap-3 px-2 py-3 text-left"
+                  className="focus-ring grid w-full grid-cols-[40px_1fr] items-center gap-3 border border-transparent px-2 py-3 text-left transition hover:border-rule hover:bg-white/40"
                 >
                   <span
                     className={
                       step === index + 1
-                        ? "grid h-8 w-8 place-items-center bg-ink text-paper"
-                        : "grid h-8 w-8 place-items-center border border-rule text-muted"
+                        ? "grid h-9 w-9 place-items-center bg-ink text-paper"
+                        : "grid h-9 w-9 place-items-center border border-rule text-muted"
                     }
                   >
                     {index + 1}
@@ -218,41 +234,52 @@ export function CritiqueFlow() {
               </li>
             ))}
           </ol>
-          <p className="mt-5 text-sm leading-6 text-muted">
-            {text(flowCopy.phaseNote, draft.language)}
-          </p>
+
+          <div className="mt-4 border border-rule bg-white/35 p-5">
+            <p className="text-xs uppercase tracking-normal text-muted">
+              {draft.language === "ko" ? "선택한 렌즈" : "Selected Lens"}
+            </p>
+            <h2 className="mt-3 font-serif text-2xl">
+              {selectedCritic.displayName}
+            </h2>
+            <p className="mt-3 text-sm leading-6 text-muted">
+              {text(selectedCritic.summary, draft.language)}
+            </p>
+          </div>
         </aside>
 
-        <div>
+        <div className="border border-ink bg-paper sheet-shadow">
           {errors.length > 0 ? (
-            <div className="mb-5 border border-clay bg-white/50 p-4 text-sm text-clay">
+            <div className="border-b border-clay bg-white/70 p-4 text-sm text-clay">
               {errors.map((error) => (
                 <p key={error}>{error}</p>
               ))}
             </div>
           ) : null}
 
-          {step === 1 ? (
-            <StepChooseCritic
-              language={draft.language}
-              selectedCriticId={draft.criticId}
-              onSelect={(criticId) => updateDraft("criticId", criticId)}
-            />
-          ) : null}
+          <div className="p-5 sm:p-8">
+            {step === 1 ? (
+              <StepChooseCritic
+                language={draft.language}
+                selectedCriticId={draft.criticId}
+                onSelect={(criticId) => updateDraft("criticId", criticId)}
+              />
+            ) : null}
 
-          {step === 2 ? (
-            <StepProjectDescription draft={draft} updateDraft={updateDraft} />
-          ) : null}
+            {step === 2 ? (
+              <StepProjectDescription draft={draft} updateDraft={updateDraft} />
+            ) : null}
 
-          {step === 3 ? (
-            <StepCritiqueSettings draft={draft} updateDraft={updateDraft} />
-          ) : null}
+            {step === 3 ? (
+              <StepCritiqueSettings draft={draft} updateDraft={updateDraft} />
+            ) : null}
+          </div>
 
-          <div className="mt-8 flex flex-col-reverse gap-3 border-t border-rule pt-5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col-reverse gap-3 border-t border-ink bg-white/35 p-5 sm:flex-row sm:items-center sm:justify-between">
             <button
               type="button"
               onClick={() => setStep((current) => Math.max(current - 1, 1))}
-              className="focus-ring border border-rule px-5 py-3 text-sm uppercase tracking-normal text-muted transition hover:border-ink hover:text-ink"
+              className="focus-ring border border-rule px-5 py-3 text-sm uppercase tracking-normal text-muted transition hover:border-ink hover:bg-paper hover:text-ink"
               disabled={step === 1}
             >
               {text(flowCopy.back, draft.language)}
@@ -261,7 +288,7 @@ export function CritiqueFlow() {
               <button
                 type="button"
                 onClick={moveNext}
-                className="focus-ring border border-ink bg-ink px-5 py-3 text-sm uppercase tracking-normal text-paper transition hover:bg-paper hover:text-ink"
+                className="focus-ring border border-ink bg-ink px-6 py-3 text-sm uppercase tracking-normal text-paper transition hover:bg-paper hover:text-ink"
               >
                 {text(flowCopy.continue, draft.language)}
               </button>
@@ -269,7 +296,7 @@ export function CritiqueFlow() {
               <button
                 type="button"
                 onClick={generateCritique}
-                className="focus-ring border border-ink bg-ink px-5 py-3 text-sm uppercase tracking-normal text-paper transition hover:bg-paper hover:text-ink"
+                className="focus-ring border border-ink bg-ink px-6 py-3 text-sm uppercase tracking-normal text-paper transition hover:bg-paper hover:text-ink"
               >
                 {text(flowCopy.generate, draft.language)}
               </button>
@@ -292,11 +319,11 @@ function StepChooseCritic({
 }) {
   return (
     <section>
-      <div className="mb-6 border-b border-rule pb-5">
+      <div className="mb-6 grid gap-3 border-b border-ink pb-5 md:grid-cols-[auto_1fr] md:items-end">
         <p className="text-sm uppercase tracking-normal text-muted">
           {text(flowCopy.stepLabel, language)} 1
         </p>
-        <h1 className="mt-2 font-serif text-5xl">
+        <h1 className="font-serif text-4xl leading-tight sm:text-5xl">
           {text(flowCopy.chooseCritic, language)}
         </h1>
       </div>
@@ -324,11 +351,11 @@ function StepProjectDescription({
 }) {
   return (
     <section>
-      <div className="mb-6 border-b border-rule pb-5">
+      <div className="mb-6 grid gap-3 border-b border-ink pb-5 md:grid-cols-[auto_1fr] md:items-end">
         <p className="text-sm uppercase tracking-normal text-muted">
           {text(flowCopy.stepLabel, draft.language)} 2
         </p>
-        <h1 className="mt-2 font-serif text-5xl">
+        <h1 className="font-serif text-4xl leading-tight sm:text-5xl">
           {text(flowCopy.describeProject, draft.language)}
         </h1>
       </div>
@@ -435,11 +462,11 @@ function StepCritiqueSettings({
 }) {
   return (
     <section>
-      <div className="mb-6 border-b border-rule pb-5">
+      <div className="mb-6 grid gap-3 border-b border-ink pb-5 md:grid-cols-[auto_1fr] md:items-end">
         <p className="text-sm uppercase tracking-normal text-muted">
           {text(flowCopy.stepLabel, draft.language)} 3
         </p>
-        <h1 className="mt-2 font-serif text-5xl">
+        <h1 className="font-serif text-4xl leading-tight sm:text-5xl">
           {text(flowCopy.setCritique, draft.language)}
         </h1>
       </div>
@@ -494,7 +521,7 @@ function LanguageToggle({
   onChange: (language: Language) => void;
 }) {
   return (
-    <div className="grid grid-cols-2 border border-rule" aria-label="Language">
+    <div className="grid grid-cols-2 border border-rule bg-paper" aria-label="Language">
       {(["ko", "en"] as const).map((option) => (
         <button
           key={option}
@@ -530,14 +557,14 @@ function TextInput({
   onChange: (value: string) => void;
 }) {
   return (
-    <label className="grid gap-2">
-      <span className="text-sm font-semibold">
+    <label className="grid gap-2 border border-rule bg-white/30 p-4">
+      <span className="text-sm font-semibold text-ink">
         {label} {required ? <span className="text-clay">*</span> : null}
       </span>
       <input
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="focus-ring border border-rule bg-white/45 px-4 py-3 text-base"
+        className="focus-ring border-0 border-b border-ink/35 bg-transparent px-0 py-2 text-base outline-none"
       />
     </label>
   );
@@ -555,15 +582,15 @@ function TextArea({
   onChange: (value: string) => void;
 }) {
   return (
-    <label className="grid gap-2">
-      <span className="text-sm font-semibold">
+    <label className="grid gap-2 border border-rule bg-white/30 p-4">
+      <span className="text-sm font-semibold text-ink">
         {label} {required ? <span className="text-clay">*</span> : null}
       </span>
       <textarea
         value={value}
         onChange={(event) => onChange(event.target.value)}
         rows={4}
-        className="focus-ring min-h-32 resize-y border border-rule bg-white/45 px-4 py-3 text-base leading-7"
+        className="focus-ring min-h-32 resize-y border-0 border-b border-ink/35 bg-transparent px-0 py-2 text-base leading-7 outline-none"
       />
     </label>
   );
@@ -581,12 +608,12 @@ function SelectField({
   onChange: (value: string) => void;
 }) {
   return (
-    <label className="grid gap-2">
+    <label className="grid gap-2 border border-rule bg-white/30 p-4">
       <span className="text-sm font-semibold">{label}</span>
       <select
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="focus-ring border border-rule bg-white/45 px-4 py-3 text-base"
+        className="focus-ring border border-ink/30 bg-paper px-4 py-3 text-base"
       >
         {options.map((option) => (
           <option key={option.value} value={option.value}>
@@ -619,7 +646,7 @@ function RadioGroup({
             className={
               value === option.value
                 ? "border border-ink bg-ink p-4 text-paper"
-                : "border border-rule bg-white/45 p-4"
+                : "border border-rule bg-white/35 p-4 transition hover:border-ink"
             }
           >
             <input

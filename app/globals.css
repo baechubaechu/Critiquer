@@ -17,7 +17,7 @@ html {
 
 body {
   margin: 0;
-  background: #f6f3ed;
+  background: #f1eee7;
   color: #181715;
   font-family: var(--font-sans);
 }
@@ -36,9 +36,9 @@ button {
 
 .architectural-grid {
   background-image:
-    linear-gradient(rgba(24, 23, 21, 0.055) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(24, 23, 21, 0.055) 1px, transparent 1px);
-  background-size: 48px 48px;
+    linear-gradient(rgba(24, 23, 21, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(24, 23, 21, 0.045) 1px, transparent 1px);
+  background-size: 40px 40px;
 }
 
 .focus-ring {
@@ -48,4 +48,19 @@ button {
 
 .focus-ring:focus-visible {
   outline-color: #181715;
+}
+
+.review-noise {
+  background-image:
+    radial-gradient(rgba(24, 23, 21, 0.08) 0.7px, transparent 0.7px);
+  background-size: 9px 9px;
+}
+
+.sheet-shadow {
+  box-shadow: 0 24px 80px rgba(24, 23, 21, 0.08);
+}
+
+.vertical-label {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
 }

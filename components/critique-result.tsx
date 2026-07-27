@@ -36,9 +36,9 @@ export function CritiqueResult({ resultId }: { resultId: string }) {
 
   return (
     <main className="min-h-screen bg-paper text-ink">
-      <header className="border-b border-rule">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-5 sm:px-8 lg:px-10">
-          <Link href="/" className="font-serif text-2xl">
+      <header className="border-b border-ink bg-paper/95">
+        <div className="mx-auto grid max-w-7xl gap-4 px-5 py-5 sm:grid-cols-[1fr_auto] sm:items-center sm:px-8 lg:px-10">
+          <Link href="/" className="font-serif text-3xl">
             CRITIQUER
           </Link>
           <Link
@@ -50,32 +50,37 @@ export function CritiqueResult({ resultId }: { resultId: string }) {
         </div>
       </header>
 
-      <article className="mx-auto max-w-7xl px-5 py-8 sm:px-8 lg:px-10">
-        <div className="grid gap-8 border-b border-ink pb-8 lg:grid-cols-[0.8fr_1.2fr]">
-          <div>
+      <article className="mx-auto max-w-7xl px-5 py-6 sm:px-8 lg:px-10">
+        <div className="border border-ink bg-paper sheet-shadow">
+          <div className="grid gap-8 border-b border-ink p-5 sm:p-8 lg:grid-cols-[0.78fr_1.22fr]">
+          <div className="grid content-between gap-8">
+            <div>
             <p className="text-sm uppercase tracking-normal text-muted">
               {text(resultCopy.mockSheet, result.language)}
             </p>
-            <h1 className="mt-3 font-serif text-5xl leading-tight">
+            <h1 className="mt-3 font-serif text-4xl leading-tight sm:text-5xl">
               {result.title}
             </h1>
+            </div>
             <p className="mt-5 max-w-xl text-sm leading-6 text-muted">
               {result.disclaimer}
             </p>
           </div>
-          <section className="border-l-0 border-rule lg:border-l lg:pl-8">
-            <h2 className="font-serif text-3xl">
+          <section className="border-t border-rule pt-6 lg:border-l lg:border-t-0 lg:pl-8 lg:pt-0">
+            <h2 className="font-serif text-3xl leading-tight">
               {text(resultCopy.understand, result.language)}
             </h2>
-            <p className="mt-4 text-lg leading-8">{result.interpretation}</p>
+            <p className="mt-4 whitespace-pre-line text-lg leading-8">
+              {result.interpretation}
+            </p>
           </section>
-        </div>
+          </div>
 
-        <div className="grid gap-8 py-8 lg:grid-cols-[0.72fr_1.28fr]">
-          <aside className="space-y-5">
+        <div className="grid gap-0 lg:grid-cols-[360px_1fr]">
+          <aside className="space-y-6 border-b border-ink p-5 sm:p-8 lg:border-b-0 lg:border-r">
             <Section title={text(resultCopy.centralTension, result.language)}>
-              <h3 className="text-xl font-semibold">{result.centralTension.title}</h3>
-              <p className="mt-3 text-sm leading-6 text-muted">
+              <h3 className="font-serif text-3xl leading-tight">{result.centralTension.title}</h3>
+              <p className="mt-4 text-sm leading-6 text-muted">
                 {result.centralTension.explanation}
               </p>
             </Section>
@@ -83,7 +88,7 @@ export function CritiqueResult({ resultId }: { resultId: string }) {
               <h3 className="text-xl font-semibold">
                 {result.suggestedExperiment.title}
               </h3>
-              <p className="mt-3 text-sm leading-6 text-muted">
+              <p className="mt-3 whitespace-pre-line text-sm leading-6 text-muted">
                 {result.suggestedExperiment.instruction}
               </p>
             </Section>
@@ -92,7 +97,7 @@ export function CritiqueResult({ resultId }: { resultId: string }) {
                 <button
                   type="button"
                   onClick={copyResult}
-                  className="focus-ring border border-ink px-4 py-3 text-left text-sm uppercase tracking-normal transition hover:bg-ink hover:text-paper"
+                  className="focus-ring border border-ink bg-ink px-4 py-3 text-left text-sm uppercase tracking-normal text-paper transition hover:bg-paper hover:text-ink"
                 >
                   {copied
                     ? text(resultCopy.copied, result.language)
@@ -115,18 +120,18 @@ export function CritiqueResult({ resultId }: { resultId: string }) {
             </Section>
           </aside>
 
-          <div className="space-y-8">
+          <div className="space-y-10 p-5 sm:p-8">
             <Section title={text(resultCopy.critiquePoints, result.language)}>
               <div className="grid gap-4">
                 {result.critiquePoints.map((point) => (
                   <article key={point.id} className="border border-rule bg-white/35 p-5">
                     <div className="flex items-start justify-between gap-4">
-                      <h3 className="font-serif text-2xl">{point.title}</h3>
+                      <h3 className="font-serif text-2xl leading-tight">{point.title}</h3>
                       <span className="text-xs uppercase tracking-normal text-muted">
                         {point.confidence}
                       </span>
                     </div>
-                    <p className="mt-4 text-sm leading-6">{point.observation}</p>
+                    <p className="mt-4 whitespace-pre-line text-sm leading-6">{point.observation}</p>
                     <p className="mt-3 border-t border-rule pt-3 text-sm leading-6 text-muted">
                       {point.designConsequence}
                     </p>
@@ -149,12 +154,12 @@ export function CritiqueResult({ resultId }: { resultId: string }) {
             <Section title={text(resultCopy.references, result.language)}>
               <div className="grid gap-4 md:grid-cols-3">
                 {result.references.map((reference) => (
-                  <article key={reference.title} className="border border-rule p-4">
+                  <article key={reference.title} className="border border-rule bg-white/30 p-4">
                     <p className="text-xs uppercase tracking-normal text-muted">
                       {reference.category}
                     </p>
                     <h3 className="mt-3 font-serif text-xl">{reference.title}</h3>
-                    <p className="mt-3 text-sm leading-6 text-muted">
+                    <p className="mt-3 whitespace-pre-line text-sm leading-6 text-muted">
                       {reference.reason}
                     </p>
                   </article>
@@ -176,6 +181,7 @@ export function CritiqueResult({ resultId }: { resultId: string }) {
               <p className="text-sm leading-6 text-muted">{result.limits}</p>
             </Section>
           </div>
+        </div>
         </div>
       </article>
     </main>
