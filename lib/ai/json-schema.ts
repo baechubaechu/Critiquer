@@ -84,6 +84,8 @@ export const firstPassJsonSchema = {
         },
         critiquePoints: {
           type: "array",
+          minItems: 3,
+          maxItems: 3,
           items: {
             type: "object",
             additionalProperties: false,
@@ -107,6 +109,8 @@ export const firstPassJsonSchema = {
         },
         questionsForDesigner: {
           type: "array",
+          minItems: 3,
+          maxItems: 4,
           items: { type: "string" },
         },
         suggestedExperiment: {
@@ -121,6 +125,8 @@ export const firstPassJsonSchema = {
         },
         recommendationQueries: {
           type: "array",
+          minItems: 3,
+          maxItems: 3,
           items: {
             type: "object",
             additionalProperties: false,

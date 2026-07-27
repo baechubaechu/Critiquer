@@ -35,5 +35,8 @@ Requested intensity: ${submission.intensity}
 Requested focus: ${submission.reviewFocus}
 
 Return only valid JSON matching the requested schema.
+Use exactly three critique points.
+Use three or four questions for the designer.
+Use exactly three recommendation queries.
 `.trim();
 }

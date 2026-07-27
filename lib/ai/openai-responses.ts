@@ -53,7 +53,7 @@ export async function createStructuredResponse({
     body: JSON.stringify({
       model: getOpenAIModel(),
       input: prompt,
-      max_output_tokens: 2400,
+      max_output_tokens: 6000,
       text: {
         format: {
           type: "json_schema",
@@ -87,5 +87,9 @@ export async function createStructuredResponse({
     throw new OpenAIRequestError("OpenAI response did not include text output.");
   }
 
-  return JSON.parse(outputText) as unknown;
+  try {
+    return JSON.parse(outputText) as unknown;
+  } catch {
+    throw new OpenAIRequestError("OpenAI returned malformed JSON output.", 502);
+  }
 }
