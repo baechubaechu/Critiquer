@@ -72,12 +72,12 @@ export async function POST(request: Request) {
       const status = error.status ?? 500;
       const message =
         status === 503
-          ? "OpenAI API 키가 아직 설정되지 않았습니다. .env.local에 OPENAI_API_KEY를 추가해주세요."
+          ? "외부 서비스의 API 키가 아직 설정되지 않았습니다. 서버 환경변수를 확인해주세요."
           : status === 401
-            ? "OpenAI API 키가 올바르지 않습니다. .env.local의 OPENAI_API_KEY 값을 다시 확인해주세요."
+            ? "외부 서비스의 API 키가 올바르지 않습니다. 서버 환경변수를 확인해주세요."
             : status === 502
-              ? "AI 응답 형식이 올바르지 않습니다. 다시 생성해보거나 입력을 조금 줄여주세요."
-              : "AI 크리틱 생성 중 문제가 발생했습니다. 잠시 뒤 다시 시도해주세요.";
+              ? "크리틱 형식이 올바르지 않습니다. 다시 생성해보거나 입력을 조금 줄여주세요."
+              : "크리틱 생성 중 문제가 발생했습니다. 잠시 뒤 다시 시도해주세요.";
 
       return safeError("openai-request-failed", message, status);
     }

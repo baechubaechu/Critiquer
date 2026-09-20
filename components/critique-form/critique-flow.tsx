@@ -21,12 +21,15 @@ import {
 import { getCriticProfile } from "@/lib/critics";
 import { apiResponseToDisplayResult } from "@/lib/result-adapter";
 import { projectSubmissionSchema } from "@/lib/validation/submission";
+import type { ZodIssue } from "zod";
 
 type GenerationStatus = {
   provider: "local" | "openai";
   phase: LocalGenerationPhase | "fallback";
   progress?: number;
 };
+
+type FieldErrors = Partial<Record<keyof ProjectDraft, string>>;
 
 const emptyDraft: ProjectDraft = {
   criticId: "peter-zumthor",
@@ -51,20 +54,13 @@ const emptyDraft: ProjectDraft = {
   aiMode: "local-only",
 };
 
-const requiredFields: Array<keyof ProjectDraft> = [
-  "title",
-  "oneLineSummary",
-  "problem",
-  "concept",
-  "designStrategies",
-  "critiqueRequest",
-];
-
 export function CritiqueFlow() {
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [draft, setDraft] = useState<ProjectDraft>(emptyDraft);
   const [errors, setErrors] = useState<string[]>([]);
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const [firstInvalidField, setFirstInvalidField] = useState<keyof ProjectDraft | null>(null);
   const [generationStatus, setGenerationStatus] =
     useState<GenerationStatus | null>(null);
 
@@ -93,6 +89,18 @@ export function CritiqueFlow() {
     window.sessionStorage.setItem("critiquer-draft", JSON.stringify(draft));
   }, [draft]);
 
+  useEffect(() => {
+    if (step !== 2 || !firstInvalidField) return;
+
+    const frame = window.requestAnimationFrame(() => {
+      const input = document.getElementById(`project-${firstInvalidField}`);
+      input?.scrollIntoView({ behavior: "smooth", block: "center" });
+      input?.focus({ preventScroll: true });
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [step, firstInvalidField]);
+
   const selectedCritic = useMemo(
     () => critics.find((critic) => critic.id === draft.criticId) ?? critics[0],
     [draft.criticId],
@@ -104,16 +112,34 @@ export function CritiqueFlow() {
       window.sessionStorage.setItem("critiquer-language", value);
     }
     setErrors([]);
+    setFieldErrors((current) => {
+      if (!current[field]) return current;
+      const next = { ...current };
+      delete next[field];
+      return next;
+    });
+    if (firstInvalidField === field) setFirstInvalidField(null);
   }
 
   function validateProjectFields() {
-    const missing = requiredFields.filter((field) => !draft[field].trim());
-    if (missing.length > 0) {
-      setErrors([text(flowCopy.requiredError, draft.language)]);
-      return false;
+    const result = projectSubmissionSchema.safeParse(draft);
+    if (result.success) {
+      setFieldErrors({});
+      setFirstInvalidField(null);
+      return true;
     }
 
-    return true;
+    const nextErrors: FieldErrors = {};
+    for (const issue of result.error.issues) {
+      const field = issue.path[0] as keyof ProjectDraft;
+      if (field && !nextErrors[field]) {
+        nextErrors[field] = describeSubmissionIssue(issue, draft.language);
+      }
+    }
+    setErrors([]);
+    setFieldErrors(nextErrors);
+    setFirstInvalidField(result.error.issues[0]?.path[0] as keyof ProjectDraft);
+    return false;
   }
 
   function moveNext() {
@@ -156,8 +182,8 @@ export function CritiqueFlow() {
         if (draft.aiMode !== "local-with-openai") {
           throw new Error(
             draft.language === "ko"
-              ? "로컬 AI 실행에 실패했습니다. 브라우저의 WebGPU 지원과 사용 가능한 메모리를 확인한 뒤 다시 시도하세요. OpenAI API는 호출하지 않았습니다."
-              : "Local AI failed. Check WebGPU support and available memory, then try again. The OpenAI API was not called.",
+              ? "이 기기에서 크리틱을 생성하지 못했습니다. 브라우저의 WebGPU 지원과 사용 가능한 메모리를 확인한 뒤 다시 시도하세요. 외부 서비스는 사용하지 않았습니다."
+              : "Could not generate a critique on this device. Check WebGPU support and available memory, then try again. The external service was not used.",
           );
         }
 
@@ -309,7 +335,11 @@ export function CritiqueFlow() {
             ) : null}
 
             {step === 2 ? (
-              <StepProjectDescription draft={draft} updateDraft={updateDraft} />
+              <StepProjectDescription
+                draft={draft}
+                fieldErrors={fieldErrors}
+                updateDraft={updateDraft}
+              />
             ) : null}
 
             {step === 3 ? (
@@ -352,6 +382,32 @@ export function CritiqueFlow() {
       </section>
     </main>
   );
+}
+
+function describeSubmissionIssue(issue: ZodIssue, language: Language) {
+  const field = issue.path[0];
+  const label =
+    typeof field === "string" && field in flowCopy.fields
+      ? text(flowCopy.fields[field as keyof typeof flowCopy.fields], language)
+      : language === "ko"
+        ? "입력 내용"
+        : "Input";
+
+  if (issue.code === "too_small" && issue.type === "string") {
+    return language === "ko"
+      ? `${label}: ${issue.minimum}자 이상 입력해주세요.`
+      : `${label}: Enter at least ${issue.minimum} characters.`;
+  }
+
+  if (issue.code === "too_big" && issue.type === "string") {
+    return language === "ko"
+      ? `${label}: ${issue.maximum}자 이하로 입력해주세요.`
+      : `${label}: Enter no more than ${issue.maximum} characters.`;
+  }
+
+  return language === "ko"
+    ? `${label}: 입력값을 확인해주세요.`
+    : `${label}: Check this value.`;
 }
 
 async function requestOpenAICritique(
@@ -418,9 +474,11 @@ function StepChooseCritic({
 
 function StepProjectDescription({
   draft,
+  fieldErrors,
   updateDraft,
 }: {
   draft: ProjectDraft;
+  fieldErrors: FieldErrors;
   updateDraft: (field: keyof ProjectDraft, value: string) => void;
 }) {
   return (
@@ -438,90 +496,118 @@ function StepProjectDescription({
       </div>
       <div className="grid gap-5">
         <TextInput
+          field="title"
           label={text(flowCopy.fields.title, draft.language)}
           value={draft.title}
+          error={fieldErrors.title}
           required
           onChange={(value) => updateDraft("title", value)}
         />
         <TextArea
+          field="oneLineSummary"
           label={text(flowCopy.fields.oneLineSummary, draft.language)}
           value={draft.oneLineSummary}
+          error={fieldErrors.oneLineSummary}
           required
           onChange={(value) => updateDraft("oneLineSummary", value)}
         />
         <TwoColumn>
           <TextArea
+            field="problem"
             label={text(flowCopy.fields.problem, draft.language)}
             value={draft.problem}
+            error={fieldErrors.problem}
             required
             onChange={(value) => updateDraft("problem", value)}
           />
           <TextArea
+            field="concept"
             label={text(flowCopy.fields.concept, draft.language)}
             value={draft.concept}
+            error={fieldErrors.concept}
             required
             onChange={(value) => updateDraft("concept", value)}
           />
         </TwoColumn>
         <TwoColumn>
           <TextArea
+            field="designStrategies"
             label={text(flowCopy.fields.designStrategies, draft.language)}
             value={draft.designStrategies}
+            error={fieldErrors.designStrategies}
             required
             onChange={(value) => updateDraft("designStrategies", value)}
           />
           <TextArea
+            field="critiqueRequest"
             label={text(flowCopy.fields.critiqueRequest, draft.language)}
             value={draft.critiqueRequest}
+            error={fieldErrors.critiqueRequest}
             required
             onChange={(value) => updateDraft("critiqueRequest", value)}
           />
         </TwoColumn>
         <TwoColumn>
           <TextInput
+            field="site"
             label={text(flowCopy.fields.site, draft.language)}
             value={draft.site}
+            error={fieldErrors.site}
             onChange={(value) => updateDraft("site", value)}
           />
           <TextInput
+            field="program"
             label={text(flowCopy.fields.program, draft.language)}
             value={draft.program}
+            error={fieldErrors.program}
             onChange={(value) => updateDraft("program", value)}
           />
         </TwoColumn>
         <TwoColumn>
           <TextInput
+            field="users"
             label={text(flowCopy.fields.users, draft.language)}
             value={draft.users}
+            error={fieldErrors.users}
             onChange={(value) => updateDraft("users", value)}
           />
           <TextInput
+            field="spatialOrganization"
             label={text(flowCopy.fields.spatialOrganization, draft.language)}
             value={draft.spatialOrganization}
+            error={fieldErrors.spatialOrganization}
             onChange={(value) => updateDraft("spatialOrganization", value)}
           />
         </TwoColumn>
         <TwoColumn>
           <TextInput
+            field="circulation"
             label={text(flowCopy.fields.circulation, draft.language)}
             value={draft.circulation}
+            error={fieldErrors.circulation}
             onChange={(value) => updateDraft("circulation", value)}
           />
           <TextInput
+            field="structure"
             label={text(flowCopy.fields.structure, draft.language)}
             value={draft.structure}
+            error={fieldErrors.structure}
             onChange={(value) => updateDraft("structure", value)}
           />
         </TwoColumn>
         <TwoColumn>
           <TextInput
+            field="materials"
             label={text(flowCopy.fields.materials, draft.language)}
             value={draft.materials}
+            error={fieldErrors.materials}
             onChange={(value) => updateDraft("materials", value)}
           />
           <TextInput
+            field="environmentalStrategy"
             label={text(flowCopy.fields.environmentalStrategy, draft.language)}
             value={draft.environmentalStrategy}
+            error={fieldErrors.environmentalStrategy}
             onChange={(value) => updateDraft("environmentalStrategy", value)}
           />
         </TwoColumn>
@@ -649,52 +735,70 @@ function TwoColumn({ children }: { children: React.ReactNode }) {
 }
 
 function TextInput({
+  field,
   label,
   value,
+  error,
   required,
   onChange,
 }: {
+  field: keyof ProjectDraft;
   label: string;
   value: string;
+  error?: string;
   required?: boolean;
   onChange: (value: string) => void;
 }) {
+  const id = `project-${field}`;
   return (
-    <label className="grid gap-2 border border-rule bg-white/30 p-4">
+    <label className={`grid gap-2 border bg-white/30 p-4 ${error ? "border-clay" : "border-rule"}`}>
       <span className="text-sm font-semibold text-ink">
         {label} {required ? <span className="text-clay">*</span> : null}
       </span>
       <input
+        id={id}
         value={value}
         onChange={(event) => onChange(event.target.value)}
+        aria-invalid={Boolean(error)}
+        aria-describedby={error ? `${id}-error` : undefined}
         className="focus-ring border-0 border-b border-ink/35 bg-transparent px-0 py-2 text-base outline-none"
       />
+      {error ? <span id={`${id}-error`} className="text-sm text-clay">{error}</span> : null}
     </label>
   );
 }
 
 function TextArea({
+  field,
   label,
   value,
+  error,
   required,
   onChange,
 }: {
+  field: keyof ProjectDraft;
   label: string;
   value: string;
+  error?: string;
   required?: boolean;
   onChange: (value: string) => void;
 }) {
+  const id = `project-${field}`;
   return (
-    <label className="grid gap-2 border border-rule bg-white/30 p-4">
+    <label className={`grid gap-2 border bg-white/30 p-4 ${error ? "border-clay" : "border-rule"}`}>
       <span className="text-sm font-semibold text-ink">
         {label} {required ? <span className="text-clay">*</span> : null}
       </span>
       <textarea
+        id={id}
         value={value}
         onChange={(event) => onChange(event.target.value)}
+        aria-invalid={Boolean(error)}
+        aria-describedby={error ? `${id}-error` : undefined}
         rows={4}
         className="focus-ring min-h-32 resize-y border-0 border-b border-ink/35 bg-transparent px-0 py-2 text-base leading-7 outline-none"
       />
+      {error ? <span id={`${id}-error`} className="text-sm text-clay">{error}</span> : null}
     </label>
   );
 }

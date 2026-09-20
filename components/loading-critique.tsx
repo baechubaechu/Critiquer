@@ -29,7 +29,7 @@ export function LoadingCritique({
             </h1>
           </div>
           <div className="border border-rule bg-white/35 px-4 py-3 text-sm text-muted">
-            {provider === "local" ? LOCAL_MODEL_NAME : "OpenAI API"}
+            {provider === "local" ? LOCAL_MODEL_NAME : language === "ko" ? "외부 서비스" : "External service"}
           </div>
         </div>
         <div className="mt-6" aria-live="polite">
@@ -87,20 +87,20 @@ function getStatusText({
   phase: LocalGenerationPhase | "fallback";
 }) {
   if (language === "en") {
-    if (phase === "checking") return "Checking local AI support";
+    if (phase === "checking") return "Checking this device";
     if (phase === "downloading") return "Downloading the local model";
     if (phase === "loading") return "Loading the model into your browser";
-    if (phase === "fallback") return "Local AI is unavailable. Switching to OpenAI";
+    if (phase === "fallback") return "Switching to the external service";
     return provider === "local"
       ? "Generating the critique on this device"
-      : "Generating the critique with OpenAI";
+      : "Generating the critique with the external service";
   }
 
-  if (phase === "checking") return "로컬 AI 실행 환경을 확인하고 있습니다";
+  if (phase === "checking") return "이 기기의 실행 환경을 확인하고 있습니다";
   if (phase === "downloading") return "로컬 모델을 다운로드하고 있습니다";
   if (phase === "loading") return "브라우저에 모델을 불러오고 있습니다";
-  if (phase === "fallback") return "로컬 실행이 어려워 OpenAI로 전환합니다";
+  if (phase === "fallback") return "이 기기에서 실행하기 어려워 외부 서비스로 전환합니다";
   return provider === "local"
     ? "이 기기에서 크리틱을 생성하고 있습니다"
-    : "OpenAI로 크리틱을 생성하고 있습니다";
+    : "외부 서비스에서 크리틱을 생성하고 있습니다";
 }

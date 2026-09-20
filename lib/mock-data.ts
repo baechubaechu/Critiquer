@@ -281,7 +281,7 @@ export function mockCritiqueResult(
       ],
       principles: critic.themes.en,
       limits:
-        "This fallback result is intentionally provisional. The production path uses the OpenAI API and structured local reference recommendations.",
+        "This is a provisional sample. Actual critiques use the selected generation method and local reference recommendations.",
       language: "en",
     };
   }
@@ -355,7 +355,7 @@ export function mockCritiqueResult(
     ],
     principles: critic.themes.ko,
     limits:
-      "이 결과는 임시 샘플입니다. 실제 크리틱은 선택한 AI 실행 방식과 로컬 레퍼런스 추천 데이터를 사용해 생성됩니다.",
+      "이 결과는 임시 샘플입니다. 실제 크리틱은 선택한 생성 방식과 레퍼런스 추천 데이터를 사용해 생성됩니다.",
     language: "ko",
   };
 }

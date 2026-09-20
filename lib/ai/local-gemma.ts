@@ -76,7 +76,7 @@ export async function generateLocalCritique({
     }
 
     if (!firstPass) {
-      throw new Error("로컬 AI가 결과 형식을 맞추지 못했습니다.");
+      throw new Error("이 기기에서 크리틱 형식을 맞추지 못했습니다.");
     }
 
     const candidates = retrieveReferenceCandidates({
@@ -133,7 +133,7 @@ async function createEngine(onStatus: StatusListener) {
 async function fetchModel(onStatus: StatusListener) {
   const response = await fetch(MODEL_URL, { cache: "force-cache" });
   if (!response.ok || !response.body) {
-    throw new Error("로컬 AI 모델을 내려받지 못했습니다.");
+    throw new Error("이 기기에서 사용할 모델을 내려받지 못했습니다.");
   }
 
   const total = Number(response.headers.get("content-length")) || 0;

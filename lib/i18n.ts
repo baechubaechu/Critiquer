@@ -61,8 +61,8 @@ export const flowCopy = {
     { ko: "크리틱 설정", en: "Set critique" },
   ],
   phaseNote: {
-    ko: "기본 설정은 로컬 AI 전용입니다. OpenAI 사용은 크리틱 설정에서 직접 허용할 수 있습니다.",
-    en: "Local AI only is the default. You can explicitly allow OpenAI in critique settings.",
+    ko: "기본 설정에서는 이 기기에서만 크리틱을 생성합니다. 외부 서비스 사용은 크리틱 설정에서 직접 허용할 수 있습니다.",
+    en: "By default, critiques are generated on this device. You can allow an external service in critique settings.",
   },
   requiredError: {
     ko: "다음 단계로 가기 전에 필수 프로젝트 항목을 입력해주세요.",
@@ -74,7 +74,7 @@ export const flowCopy = {
   setCritique: { ko: "크리틱 방식을 설정하세요", en: "Set the critique" },
   back: { ko: "이전", en: "Back" },
   continue: { ko: "계속", en: "Continue" },
-  generate: { ko: "AI 크리틱 생성", en: "Generate AI critique" },
+  generate: { ko: "크리틱 받기", en: "Get critique" },
   fields: {
     title: { ko: "프로젝트 제목", en: "Project title" },
     oneLineSummary: { ko: "한 문장 요약", en: "One-sentence project summary" },
@@ -100,7 +100,7 @@ export const flowCopy = {
     reviewFocus: { ko: "크리틱 초점", en: "Critique focus" },
     intensity: { ko: "크리틱 강도", en: "Critique intensity" },
     language: { ko: "출력 언어", en: "Language" },
-    aiMode: { ko: "AI 실행 방식", en: "AI mode" },
+    aiMode: { ko: "생성 방식", en: "Generation method" },
   },
   aiModes: {
     localOnly: { ko: "로컬만 사용", en: "Local only" },
@@ -108,16 +108,16 @@ export const flowCopy = {
       ko: "이 기기에서만 생성합니다. 실패해도 유료 API를 호출하지 않습니다.",
       en: "Generate only on this device. Never call a paid API on failure.",
     },
-    allowOpenAI: { ko: "OpenAI 전환 허용", en: "Allow OpenAI fallback" },
+    allowOpenAI: { ko: "외부 서비스 전환 허용", en: "Allow external service fallback" },
     allowOpenAIDescription: {
-      ko: "로컬 생성이 실패하면 OpenAI API를 호출합니다. API 사용료가 발생할 수 있습니다.",
-      en: "Call the OpenAI API if local generation fails. API charges may apply.",
+      ko: "이 기기에서 생성하지 못하면 외부 서비스로 전환합니다. 사용료가 발생할 수 있습니다.",
+      en: "If generation on this device fails, use an external service. Charges may apply.",
     },
   },
 };
 
 export const loadingCopy = {
-  label: { ko: "AI 크리틱 생성 중", en: "Generating AI critique" },
+  label: { ko: "크리틱 작성 중", en: "Preparing critique" },
   headline: {
     ko: (criticName: string) => `${criticName} 교수님이 프로젝트를 읽는 중입니다.`,
     en: (criticName: string) => `Professor ${criticName} is reviewing your project.`,
@@ -142,7 +142,7 @@ export const loadingCopy = {
 
 export const resultCopy = {
   anotherCritic: { ko: "다른 교수님 선택", en: "Choose another professor" },
-  mockSheet: { ko: "AI 리뷰 시트", en: "AI review sheet" },
+  mockSheet: { ko: "크리틱 시트", en: "Critique sheet" },
   understand: { ko: "이해한 내용", en: "What I Understand" },
   centralTension: { ko: "핵심 긴장", en: "Central Tension" },
   oneMove: { ko: "테스트할 한 가지 조치", en: "One Move to Test" },

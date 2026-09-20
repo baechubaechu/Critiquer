@@ -5,6 +5,7 @@ import Link from "next/link";
 import type { MockResult } from "@/lib/mock-data";
 import { fallbackResult } from "@/lib/mock-data";
 import { resultCopy, text } from "@/lib/i18n";
+import { getReferenceReason } from "@/lib/references/display-copy";
 
 export function CritiqueResult({ resultId }: { resultId: string }) {
   const [result, setResult] = useState<MockResult>(fallbackResult);
@@ -160,7 +161,7 @@ export function CritiqueResult({ resultId }: { resultId: string }) {
                     </p>
                     <h3 className="mt-3 font-serif text-xl">{reference.title}</h3>
                     <p className="mt-3 whitespace-pre-line text-sm leading-6 text-muted">
-                      {reference.reason}
+                      {getReferenceReason(reference.title, reference.reason, result.language)}
                     </p>
                   </article>
                 ))}
