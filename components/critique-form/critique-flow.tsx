@@ -14,7 +14,19 @@ import {
 } from "@/lib/mock-data";
 import { flowCopy, languageNames, text, type Language } from "@/lib/i18n";
 import type { CritiqueApiResponse } from "@/lib/ai/schemas";
+import {
+  generateLocalCritique,
+  type LocalGenerationPhase,
+} from "@/lib/ai/local-gemma";
+import { getCriticProfile } from "@/lib/critics";
 import { apiResponseToDisplayResult } from "@/lib/result-adapter";
+import { projectSubmissionSchema } from "@/lib/validation/submission";
+
+type GenerationStatus = {
+  provider: "local" | "openai";
+  phase: LocalGenerationPhase | "fallback";
+  progress?: number;
+};
 
 const emptyDraft: ProjectDraft = {
   criticId: "peter-zumthor",
@@ -36,6 +48,7 @@ const emptyDraft: ProjectDraft = {
   reviewFocus: "comprehensive",
   intensity: "constructive",
   language: "ko",
+  aiMode: "local-only",
 };
 
 const requiredFields: Array<keyof ProjectDraft> = [
@@ -52,7 +65,8 @@ export function CritiqueFlow() {
   const [step, setStep] = useState(1);
   const [draft, setDraft] = useState<ProjectDraft>(emptyDraft);
   const [errors, setErrors] = useState<string[]>([]);
-  const [isGenerating, setIsGenerating] = useState(false);
+  const [generationStatus, setGenerationStatus] =
+    useState<GenerationStatus | null>(null);
 
   useEffect(() => {
     const saved = window.sessionStorage.getItem("critiquer-draft");
@@ -61,6 +75,10 @@ export function CritiqueFlow() {
       setDraft({
         ...parsed,
         language: parsed.language === "en" ? "en" : "ko",
+        aiMode:
+          parsed.aiMode === "local-with-openai"
+            ? "local-with-openai"
+            : "local-only",
       });
       return;
     }
@@ -112,30 +130,40 @@ export function CritiqueFlow() {
       return;
     }
 
-    setIsGenerating(true);
+    setGenerationStatus({ provider: "local", phase: "checking" });
 
     try {
-      const response = await fetch("/api/critique", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(draft),
-      });
-
-      if (!response.ok) {
-        const body = (await response.json().catch(() => null)) as
-          | { error?: { message?: string } }
-          | null;
+      const submission = projectSubmissionSchema.parse(draft);
+      const critic = getCriticProfile(submission.criticId);
+      if (!critic) {
         throw new Error(
-          body?.error?.message ||
-            (draft.language === "ko"
-              ? "크리틱 생성에 실패했습니다."
-              : "Failed to generate critique."),
+          draft.language === "ko"
+            ? "선택한 교수님을 찾을 수 없습니다."
+            : "The selected professor could not be found.",
         );
       }
 
-      const apiResponse = (await response.json()) as CritiqueApiResponse;
+      let apiResponse: CritiqueApiResponse;
+      try {
+        apiResponse = await generateLocalCritique({
+          submission,
+          critic,
+          onStatus: (status) =>
+            setGenerationStatus({ provider: "local", ...status }),
+        });
+      } catch (localError) {
+        console.warn("[CRITIQUER_LOCAL_AI_ERROR]", localError);
+        if (draft.aiMode !== "local-with-openai") {
+          throw new Error(
+            draft.language === "ko"
+              ? "로컬 AI 실행에 실패했습니다. 브라우저의 WebGPU 지원과 사용 가능한 메모리를 확인한 뒤 다시 시도하세요. OpenAI API는 호출하지 않았습니다."
+              : "Local AI failed. Check WebGPU support and available memory, then try again. The OpenAI API was not called.",
+          );
+        }
+
+        setGenerationStatus({ provider: "openai", phase: "fallback" });
+        apiResponse = await requestOpenAICritique(draft, draft.language);
+      }
       const id =
         typeof crypto !== "undefined" && "randomUUID" in crypto
           ? crypto.randomUUID()
@@ -160,15 +188,18 @@ export function CritiqueFlow() {
             : "An unknown error occurred.",
       ]);
     } finally {
-      setIsGenerating(false);
+      setGenerationStatus(null);
     }
   }
 
-  if (isGenerating) {
+  if (generationStatus) {
     return (
       <LoadingCritique
         criticName={selectedCritic.displayName}
         language={draft.language}
+        provider={generationStatus.provider}
+        phase={generationStatus.phase}
+        progress={generationStatus.progress}
       />
     );
   }
@@ -189,9 +220,6 @@ export function CritiqueFlow() {
               language={draft.language}
               onChange={(language) => updateDraft("language", language)}
             />
-            <span className="hidden text-sm uppercase tracking-normal text-muted sm:inline">
-              {text(flowCopy.mockFlow, draft.language)}
-            </span>
           </div>
         </div>
       </header>
@@ -324,6 +352,31 @@ export function CritiqueFlow() {
       </section>
     </main>
   );
+}
+
+async function requestOpenAICritique(
+  draft: ProjectDraft,
+  language: Language,
+): Promise<CritiqueApiResponse> {
+  const response = await fetch("/api/critique", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(draft),
+  });
+
+  if (!response.ok) {
+    const body = (await response.json().catch(() => null)) as
+      | { error?: { message?: string } }
+      | null;
+    throw new Error(
+      body?.error?.message ||
+        (language === "ko"
+          ? "크리틱 생성에 실패했습니다."
+          : "Failed to generate critique."),
+    );
+  }
+
+  return (await response.json()) as CritiqueApiResponse;
 }
 
 function StepChooseCritic({
@@ -534,6 +587,29 @@ function StepCritiqueSettings({
             { value: "en", label: languageNames.en },
           ]}
           onChange={(value) => updateDraft("language", value)}
+        />
+        <RadioGroup
+          label={text(flowCopy.fields.aiMode, draft.language)}
+          value={draft.aiMode}
+          options={[
+            {
+              value: "local-only",
+              label: text(flowCopy.aiModes.localOnly, draft.language),
+              description: text(
+                flowCopy.aiModes.localOnlyDescription,
+                draft.language,
+              ),
+            },
+            {
+              value: "local-with-openai",
+              label: text(flowCopy.aiModes.allowOpenAI, draft.language),
+              description: text(
+                flowCopy.aiModes.allowOpenAIDescription,
+                draft.language,
+              ),
+            },
+          ]}
+          onChange={(value) => updateDraft("aiMode", value)}
         />
       </div>
     </section>

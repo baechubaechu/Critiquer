@@ -2,14 +2,12 @@ import { firstPassJsonSchema } from "@/lib/ai/json-schema";
 import { createStructuredResponse } from "@/lib/ai/openai-responses";
 import { buildFirstPassPrompt } from "@/lib/ai/prompts/critic-critique";
 import {
-  critiqueResponseSchema,
-  projectAnalysisSchema,
+  firstPassResponseSchema,
   type CritiqueResponse,
   type ProjectAnalysis,
 } from "@/lib/ai/schemas";
 import type { CriticProfile } from "@/lib/critics/types";
 import type { ProjectSubmission } from "@/lib/validation/submission";
-import { z } from "zod";
 
 export async function generateProjectAnalysisAndCritique({
   submission,
@@ -37,8 +35,3 @@ export async function generateProjectAnalysisAndCritique({
     critique: parsed.critique,
   };
 }
-
-const firstPassResponseSchema = z.object({
-  analysis: projectAnalysisSchema.required({ centralIntentStrategyGap: true }),
-  critique: critiqueResponseSchema,
-});

@@ -55,15 +55,14 @@ export const landingCopy = {
 };
 
 export const flowCopy = {
-  mockFlow: { ko: "AI 크리틱 흐름", en: "AI critique flow" },
   steps: [
     { ko: "교수 선택", en: "Choose professor" },
     { ko: "프로젝트 입력", en: "Describe project" },
     { ko: "크리틱 설정", en: "Set critique" },
   ],
   phaseNote: {
-    ko: "현재 버전은 OpenAI API로 크리틱을 생성하고, 로컬 레퍼런스 데이터에서 관련 사례를 가볍게 추천합니다.",
-    en: "This version generates critiques with the OpenAI API and lightly recommends references from local data.",
+    ko: "기본 설정은 로컬 AI 전용입니다. OpenAI 사용은 크리틱 설정에서 직접 허용할 수 있습니다.",
+    en: "Local AI only is the default. You can explicitly allow OpenAI in critique settings.",
   },
   requiredError: {
     ko: "다음 단계로 가기 전에 필수 프로젝트 항목을 입력해주세요.",
@@ -101,6 +100,19 @@ export const flowCopy = {
     reviewFocus: { ko: "크리틱 초점", en: "Critique focus" },
     intensity: { ko: "크리틱 강도", en: "Critique intensity" },
     language: { ko: "출력 언어", en: "Language" },
+    aiMode: { ko: "AI 실행 방식", en: "AI mode" },
+  },
+  aiModes: {
+    localOnly: { ko: "로컬만 사용", en: "Local only" },
+    localOnlyDescription: {
+      ko: "이 기기에서만 생성합니다. 실패해도 유료 API를 호출하지 않습니다.",
+      en: "Generate only on this device. Never call a paid API on failure.",
+    },
+    allowOpenAI: { ko: "OpenAI 전환 허용", en: "Allow OpenAI fallback" },
+    allowOpenAIDescription: {
+      ko: "로컬 생성이 실패하면 OpenAI API를 호출합니다. API 사용료가 발생할 수 있습니다.",
+      en: "Call the OpenAI API if local generation fails. API charges may apply.",
+    },
   },
 };
 

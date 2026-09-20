@@ -14,19 +14,19 @@ The first implementation covers Phase 1 and Phase 2 from the development brief:
 - AI result page
 - Session-local draft and result persistence
 
-AI generation now starts with a Phase 4-1 one-call OpenAI Responses API route.
-Reference recommendations are still deterministic and local, so the app can
-avoid a second API call during early development.
+AI generation uses Gemma 4 E4B in the browser by default. The user may
+explicitly allow an OpenAI fallback in critique settings. Reference
+recommendations remain deterministic and local.
 
 ## AI Model Plan
 
-Development should default to:
+The optional OpenAI fallback defaults to:
 
 ```text
 gpt-5.6-luna
 ```
 
-This keeps early API testing cheaper. Higher-quality review modes can later test
+This keeps optional API testing cheaper. Higher-quality review modes can later test
 `gpt-5.6-terra` or `gpt-5.6-sol` after the core flow is working.
 
 The model name is prepared in:
@@ -37,7 +37,8 @@ The model name is prepared in:
 
 ## API Setup
 
-Create `.env.local` in the project root:
+The default local-only mode needs no API key. To enable the optional OpenAI
+fallback, create `.env.local` in the project root:
 
 ```env
 OPENAI_API_KEY=your_api_key_here
@@ -45,7 +46,9 @@ OPENAI_MODEL=gpt-5.6-luna
 ```
 
 The API key is only read inside the Next.js server route. It is not exposed to
-the browser.
+the browser. Local-only mode never calls that route, including when local
+generation fails. The first local run downloads an approximately 3 GB model
+into the browser; WebGPU support and sufficient device memory are required.
 
 ## Run Locally
 
@@ -87,7 +90,7 @@ The app is organized around the MVP user journey:
 - `app/critique/page.tsx` renders the multi-step critique form.
 - `app/critique/[id]/page.tsx` renders a stored mock result.
 - `app/api/critique/route.ts` validates submissions and calls OpenAI from the
-  server.
+  server only when the user has allowed fallback and local generation fails.
 - `components/` contains reusable UI surfaces for critics, loading, form flow,
   and result display.
 - `lib/mock-data.ts` holds temporary critic summaries and mock critique output.

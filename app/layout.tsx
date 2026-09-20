@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { FeedbackPanel } from "@/components/feedback-panel";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -15,10 +14,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ko">
-      <body>
-        {children}
-        <FeedbackPanel />
-      </body>
+      <body>{children}</body>
     </html>
   );
 }

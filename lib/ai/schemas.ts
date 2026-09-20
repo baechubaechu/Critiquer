@@ -87,9 +87,15 @@ export const critiqueApiResponseSchema = z.object({
   recommendations: z.array(referenceRecommendationSchema),
 });
 
+export const firstPassResponseSchema = z.object({
+  analysis: projectAnalysisSchema.required({ centralIntentStrategyGap: true }),
+  critique: critiqueResponseSchema,
+});
+
 export type ProjectAnalysis = z.infer<typeof projectAnalysisSchema>;
 export type CritiqueResponse = z.infer<typeof critiqueResponseSchema>;
 export type ReferenceRecommendation = z.infer<
   typeof referenceRecommendationSchema
 >;
 export type CritiqueApiResponse = z.infer<typeof critiqueApiResponseSchema>;
+export type FirstPassResponse = z.infer<typeof firstPassResponseSchema>;

@@ -31,6 +31,7 @@ export type ProjectDraft = {
   reviewFocus: string;
   intensity: string;
   language: Language;
+  aiMode: "local-only" | "local-with-openai";
 };
 
 export type MockResult = {
@@ -354,7 +355,7 @@ export function mockCritiqueResult(
     ],
     principles: critic.themes.ko,
     limits:
-      "이 결과는 API 응답이 없을 때 보여주는 임시 샘플입니다. 실제 크리틱은 OpenAI API와 로컬 레퍼런스 추천 데이터를 사용해 생성됩니다.",
+      "이 결과는 임시 샘플입니다. 실제 크리틱은 선택한 AI 실행 방식과 로컬 레퍼런스 추천 데이터를 사용해 생성됩니다.",
     language: "ko",
   };
 }
@@ -380,6 +381,7 @@ export const fallbackResult = mockCritiqueResult(
     reviewFocus: "comprehensive",
     intensity: "constructive",
     language: "ko",
+    aiMode: "local-only",
   },
   critics[0],
 );
