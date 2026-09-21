@@ -48,8 +48,8 @@ export function LoadingCritique({
           {phase === "downloading" ? (
             <p className="mt-3 text-sm leading-6 text-muted">
               {language === "ko"
-                ? "첫 실행에서는 약 3GB 모델을 받습니다. 이후에는 브라우저 캐시를 우선 사용합니다."
-                : "The first run downloads a model of about 3GB. Later runs prefer the browser cache."}
+                ? "첫 실행에서는 약 3GB 모델을 받습니다. 완료되면 이 사이트의 전용 저장소에 보관합니다."
+                : "The first run downloads a model of about 3GB and keeps it in this site's dedicated storage."}
             </p>
           ) : null}
         </div>

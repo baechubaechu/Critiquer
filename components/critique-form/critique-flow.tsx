@@ -260,11 +260,7 @@ export function CritiqueFlow() {
       } catch (localError) {
         console.warn("[CRITIQUER_LOCAL_AI_ERROR]", localError);
         if (draft.aiMode !== "local-with-openai") {
-          throw new Error(
-            draft.language === "ko"
-              ? "이 기기에서 크리틱을 생성하지 못했습니다. 브라우저의 WebGPU 지원과 사용 가능한 메모리를 확인한 뒤 다시 시도하세요. 외부 서비스는 사용하지 않았습니다."
-              : "Could not generate a critique on this device. Check WebGPU support and available memory, then try again. The external service was not used.",
-          );
+          throw new Error(describeLocalGenerationError(localError, draft.language));
         }
 
         setGenerationStatus({ provider: "openai", phase: "fallback" });
@@ -489,6 +485,47 @@ function describeSubmissionIssue(issue: ZodIssue, language: Language) {
   return language === "ko"
     ? `${label}: 입력값을 확인해주세요.`
     : `${label}: Check this value.`;
+}
+
+function describeLocalGenerationError(error: unknown, language: Language) {
+  const detail = error instanceof Error ? error.message : String(error);
+  const normalized = detail.toLowerCase();
+
+  if (normalized.includes("webgpu") || !("gpu" in navigator)) {
+    return language === "ko"
+      ? "이 브라우저에서 WebGPU를 사용할 수 없습니다. 최신 Chrome에서 하드웨어 가속을 켠 뒤 다시 시도해주세요."
+      : "WebGPU is unavailable. Enable hardware acceleration in the latest Chrome and try again.";
+  }
+
+  if (
+    normalized.includes("memory") ||
+    normalized.includes("allocation") ||
+    normalized.includes("out of bounds")
+  ) {
+    return language === "ko"
+      ? "모델을 실행할 메모리가 부족합니다. 다른 탭과 프로그램을 닫은 뒤 다시 시도해주세요."
+      : "There is not enough memory to run the model. Close other tabs and applications, then try again.";
+  }
+
+  if (
+    normalized.includes("context") ||
+    normalized.includes("token") ||
+    normalized.includes("sequence")
+  ) {
+    return language === "ko"
+      ? "입력 내용이 모델의 처리 범위를 넘었습니다. 설명을 조금 줄인 뒤 다시 시도해주세요."
+      : "The input exceeded the model's processing limit. Shorten the project description and try again.";
+  }
+
+  if (detail && detail !== "[object Object]") {
+    return language === "ko"
+      ? `이 기기에서 크리틱을 생성하지 못했습니다: ${detail}`
+      : `Could not generate the critique on this device: ${detail}`;
+  }
+
+  return language === "ko"
+    ? "이 기기에서 크리틱을 생성하지 못했습니다. Chrome을 다시 시작한 뒤 시도해주세요."
+    : "Could not generate the critique on this device. Restart Chrome and try again.";
 }
 
 async function requestOpenAICritique(
