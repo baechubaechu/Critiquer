@@ -31,6 +31,24 @@ type GenerationStatus = {
 
 type FieldErrors = Partial<Record<keyof ProjectDraft, string>>;
 
+type ProjectDescription = Pick<
+  ProjectDraft,
+  | "title"
+  | "oneLineSummary"
+  | "problem"
+  | "concept"
+  | "designStrategies"
+  | "critiqueRequest"
+  | "site"
+  | "program"
+  | "users"
+  | "spatialOrganization"
+  | "circulation"
+  | "structure"
+  | "materials"
+  | "environmentalStrategy"
+>;
+
 const emptyDraft: ProjectDraft = {
   criticId: "peter-zumthor",
   title: "",
@@ -52,6 +70,61 @@ const emptyDraft: ProjectDraft = {
   intensity: "constructive",
   language: "ko",
   aiMode: "local-only",
+};
+
+const sampleProjects: Record<Language, ProjectDescription> = {
+  ko: {
+    title: "도시의 틈, 온기 도서관",
+    oneLineSummary:
+      "폐업한 도심 목욕탕을 동네의 기억과 새로운 일상을 담는 작은 도서관으로 재생합니다.",
+    problem:
+      "오래된 주거지에는 세대가 자연스럽게 만나 머물 수 있는 실내 공공 공간이 부족하고, 폐업한 목욕탕은 동네의 기억을 간직한 채 방치되어 있습니다.",
+    concept:
+      "기존 목욕탕의 온도와 습도, 빛의 기억을 보존하면서 읽기와 대화가 층층이 이어지는 따뜻한 지식의 방을 만듭니다.",
+    designStrategies:
+      "기존 탕의 높이 차이를 열람 공간으로 활용하고, 중앙의 높은 굴뚝을 빛이 들어오는 서가로 바꾸며, 탈의실과 목욕실 사이의 문턱을 다양한 체류 공간으로 재구성합니다.",
+    critiqueRequest:
+      "기존 건물의 분위기를 살리려는 선택이 단순한 향수에 머물지 않는지, 열람과 대화가 공존하는 동선과 공간의 위계가 충분히 분명한지 검토받고 싶습니다.",
+    site: "서울의 오래된 저층 주거지와 골목 상권 사이에 있는 1980년대 목욕탕",
+    program: "도서 열람, 어린이 자료실, 주민 모임방, 작은 전시실, 카페, 기록 보관실",
+    users: "인근 주민, 어린이와 보호자, 청소년, 동네를 방문하는 사람",
+    spatialOrganization:
+      "중앙의 빛 서가를 중심으로 조용한 열람 공간과 대화가 가능한 공용 공간을 나누어 배치합니다.",
+    circulation:
+      "골목에서 낮은 현관으로 진입한 뒤 기존 탈의실을 지나 중앙 서가와 여러 열람실로 퍼지는 순환 동선입니다.",
+    structure:
+      "기존 철근콘크리트 벽과 보를 보강하고, 새로 삽입하는 공간은 가벼운 목구조로 구분합니다.",
+    materials:
+      "기존 타일과 노출 콘크리트, 재사용 벽돌, 따뜻한 색의 목재와 반투명 유리를 사용합니다.",
+    environmentalStrategy:
+      "기존 굴뚝을 활용한 자연 환기, 천창을 통한 간접 채광, 빗물 저장과 재사용을 계획합니다.",
+  },
+  en: {
+    title: "The Warmth Library",
+    oneLineSummary:
+      "An abandoned neighborhood bathhouse becomes a small library that carries local memory into everyday public life.",
+    problem:
+      "The aging residential district lacks an indoor public place where generations can meet and stay, while its closed bathhouse remains vacant despite holding strong local memories.",
+    concept:
+      "The project preserves memories of heat, humidity, and light while turning the bathhouse into a sequence of warm rooms for reading and conversation.",
+    designStrategies:
+      "Level changes in the former baths become reading areas, the tall central chimney becomes a daylit book tower, and thresholds between changing and bathing rooms become varied places to pause.",
+    critiqueRequest:
+      "I want to test whether preserving the old atmosphere goes beyond nostalgia and whether the circulation and hierarchy clearly support both quiet reading and conversation.",
+    site: "A 1980s bathhouse between an old low-rise neighborhood and a narrow commercial alley in Seoul",
+    program: "Reading rooms, children's library, community room, small gallery, cafe, and local archive",
+    users: "Local residents, children and caregivers, teenagers, and neighborhood visitors",
+    spatialOrganization:
+      "A central daylit book tower separates quiet reading rooms from more social shared spaces.",
+    circulation:
+      "Visitors enter from the alley through a low foyer, cross the former changing room, and disperse around the central book tower.",
+    structure:
+      "The existing reinforced-concrete walls and beams are strengthened, while new insertions use lightweight timber construction.",
+    materials:
+      "Existing tile and exposed concrete are combined with reused brick, warm timber, and translucent glass.",
+    environmentalStrategy:
+      "The old chimney supports natural ventilation, roof lights provide indirect daylight, and rainwater is collected for reuse.",
+  },
 };
 
 export function CritiqueFlow() {
@@ -119,6 +192,13 @@ export function CritiqueFlow() {
       return next;
     });
     if (firstInvalidField === field) setFirstInvalidField(null);
+  }
+
+  function fillSampleProject() {
+    setDraft((current) => ({ ...current, ...sampleProjects[current.language] }));
+    setErrors([]);
+    setFieldErrors({});
+    setFirstInvalidField(null);
   }
 
   function validateProjectFields() {
@@ -338,6 +418,7 @@ export function CritiqueFlow() {
               <StepProjectDescription
                 draft={draft}
                 fieldErrors={fieldErrors}
+                onFillSample={fillSampleProject}
                 updateDraft={updateDraft}
               />
             ) : null}
@@ -475,10 +556,12 @@ function StepChooseCritic({
 function StepProjectDescription({
   draft,
   fieldErrors,
+  onFillSample,
   updateDraft,
 }: {
   draft: ProjectDraft;
   fieldErrors: FieldErrors;
+  onFillSample: () => void;
   updateDraft: (field: keyof ProjectDraft, value: string) => void;
 }) {
   return (
@@ -486,13 +569,20 @@ function StepProjectDescription({
       data-feedback-target="critique-project-description"
       data-feedback-label="프로젝트 설명 단계"
     >
-      <div className="mb-6 grid gap-3 border-b border-ink pb-5 md:grid-cols-[auto_1fr] md:items-end">
+      <div className="mb-6 grid gap-3 border-b border-ink pb-5 md:grid-cols-[auto_1fr_auto] md:items-end">
         <p className="text-sm uppercase tracking-normal text-muted">
           {text(flowCopy.stepLabel, draft.language)} 2
         </p>
         <h1 className="font-serif text-4xl leading-tight sm:text-5xl">
           {text(flowCopy.describeProject, draft.language)}
         </h1>
+        <button
+          type="button"
+          onClick={onFillSample}
+          className="focus-ring border border-ink px-4 py-2.5 text-sm font-semibold text-ink transition hover:bg-ink hover:text-paper"
+        >
+          {text(flowCopy.fillSample, draft.language)}
+        </button>
       </div>
       <div className="grid gap-5">
         <TextInput

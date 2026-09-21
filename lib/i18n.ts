@@ -75,6 +75,7 @@ export const flowCopy = {
   back: { ko: "이전", en: "Back" },
   continue: { ko: "계속", en: "Continue" },
   generate: { ko: "크리틱 받기", en: "Get critique" },
+  fillSample: { ko: "샘플 프로젝트 채우기", en: "Fill sample project" },
   fields: {
     title: { ko: "프로젝트 제목", en: "Project title" },
     oneLineSummary: { ko: "한 문장 요약", en: "One-sentence project summary" },
