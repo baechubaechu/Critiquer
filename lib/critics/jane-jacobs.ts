@@ -82,7 +82,6 @@ export const janeJacobs: CriticProfile = {
   ],
   associatedReferenceIds: [
     "greenwich-village",
-    "hudson-street",
     "washington-square-park",
   ],
   sourceIds: ["jacobs-death-and-life"],

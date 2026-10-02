@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { CriticPreviewCard } from "@/components/critic-card";
@@ -13,7 +13,16 @@ import {
   type ProjectDraft,
 } from "@/lib/mock-data";
 import { flowCopy, languageNames, text, type Language } from "@/lib/i18n";
-import type { CritiqueApiResponse } from "@/lib/ai/schemas";
+import {
+  critiqueApiResponseSchema,
+  type CritiqueApiResponse,
+} from "@/lib/ai/schemas";
+import {
+  readBrowserValue,
+  writeBrowserValue,
+  restoreDraft,
+  saveResult,
+} from "@/lib/browser-storage";
 import {
   generateLocalCritique,
   type LocalGenerationPhase,
@@ -27,6 +36,7 @@ type GenerationStatus = {
   provider: "local" | "openai";
   phase: LocalGenerationPhase | "fallback";
   progress?: number;
+  storage?: "persistent" | "temporary" | "unavailable";
 };
 
 type FieldErrors = Partial<Record<keyof ProjectDraft, string>>;
@@ -86,7 +96,8 @@ const sampleProjects: Record<Language, ProjectDescription> = {
     critiqueRequest:
       "기존 건물의 분위기를 살리려는 선택이 단순한 향수에 머물지 않는지, 열람과 대화가 공존하는 동선과 공간의 위계가 충분히 분명한지 검토받고 싶습니다.",
     site: "서울의 오래된 저층 주거지와 골목 상권 사이에 있는 1980년대 목욕탕",
-    program: "도서 열람, 어린이 자료실, 주민 모임방, 작은 전시실, 카페, 기록 보관실",
+    program:
+      "도서 열람, 어린이 자료실, 주민 모임방, 작은 전시실, 카페, 기록 보관실",
     users: "인근 주민, 어린이와 보호자, 청소년, 동네를 방문하는 사람",
     spatialOrganization:
       "중앙의 빛 서가를 중심으로 조용한 열람 공간과 대화가 가능한 공용 공간을 나누어 배치합니다.",
@@ -112,8 +123,10 @@ const sampleProjects: Record<Language, ProjectDescription> = {
     critiqueRequest:
       "I want to test whether preserving the old atmosphere goes beyond nostalgia and whether the circulation and hierarchy clearly support both quiet reading and conversation.",
     site: "A 1980s bathhouse between an old low-rise neighborhood and a narrow commercial alley in Seoul",
-    program: "Reading rooms, children's library, community room, small gallery, cafe, and local archive",
-    users: "Local residents, children and caregivers, teenagers, and neighborhood visitors",
+    program:
+      "Reading rooms, children's library, community room, small gallery, cafe, and local archive",
+    users:
+      "Local residents, children and caregivers, teenagers, and neighborhood visitors",
     spatialOrganization:
       "A central daylit book tower separates quiet reading rooms from more social shared spaces.",
     circulation:
@@ -131,36 +144,38 @@ export function CritiqueFlow() {
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [draft, setDraft] = useState<ProjectDraft>(emptyDraft);
+  const [draftReady, setDraftReady] = useState(false);
+  const [accessCode, setAccessCode] = useState("");
+  const [validationAttempt, setValidationAttempt] = useState(0);
+  const errorRef = useRef<HTMLDivElement>(null);
   const [errors, setErrors] = useState<string[]>([]);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
-  const [firstInvalidField, setFirstInvalidField] = useState<keyof ProjectDraft | null>(null);
+  const [firstInvalidField, setFirstInvalidField] = useState<
+    keyof ProjectDraft | null
+  >(null);
   const [generationStatus, setGenerationStatus] =
     useState<GenerationStatus | null>(null);
 
   useEffect(() => {
-    const saved = window.sessionStorage.getItem("critiquer-draft");
-    if (saved) {
-      const parsed = JSON.parse(saved) as ProjectDraft;
-      setDraft({
-        ...parsed,
-        language: parsed.language === "en" ? "en" : "ko",
-        aiMode:
-          parsed.aiMode === "local-with-openai"
-            ? "local-with-openai"
-            : "local-only",
-      });
-      return;
-    }
-
-    const savedLanguage = window.sessionStorage.getItem("critiquer-language");
-    if (savedLanguage === "ko" || savedLanguage === "en") {
-      setDraft((current) => ({ ...current, language: savedLanguage }));
-    }
+    const savedLanguage = readBrowserValue("critiquer-language");
+    setDraft(
+      restoreDraft(
+        { ...emptyDraft, language: savedLanguage === "en" ? "en" : "ko" },
+        readBrowserValue("critiquer-draft"),
+      ),
+    );
+    setDraftReady(true);
   }, []);
 
   useEffect(() => {
-    window.sessionStorage.setItem("critiquer-draft", JSON.stringify(draft));
-  }, [draft]);
+    if (draftReady) writeBrowserValue("critiquer-draft", JSON.stringify(draft));
+  }, [draft, draftReady]);
+
+  useEffect(() => {
+    if (!errors.length || generationStatus) return;
+    errorRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    errorRef.current?.focus({ preventScroll: true });
+  }, [errors, generationStatus]);
 
   useEffect(() => {
     if (step !== 2 || !firstInvalidField) return;
@@ -172,7 +187,7 @@ export function CritiqueFlow() {
     });
 
     return () => window.cancelAnimationFrame(frame);
-  }, [step, firstInvalidField]);
+  }, [step, firstInvalidField, validationAttempt]);
 
   const selectedCritic = useMemo(
     () => critics.find((critic) => critic.id === draft.criticId) ?? critics[0],
@@ -182,7 +197,7 @@ export function CritiqueFlow() {
   function updateDraft(field: keyof ProjectDraft, value: string) {
     setDraft((current) => ({ ...current, [field]: value }));
     if (field === "language" && (value === "ko" || value === "en")) {
-      window.sessionStorage.setItem("critiquer-language", value);
+      writeBrowserValue("critiquer-language", value);
     }
     setErrors([]);
     setFieldErrors((current) => {
@@ -195,13 +210,17 @@ export function CritiqueFlow() {
   }
 
   function fillSampleProject() {
-    setDraft((current) => ({ ...current, ...sampleProjects[current.language] }));
+    setDraft((current) => ({
+      ...current,
+      ...sampleProjects[current.language],
+    }));
     setErrors([]);
     setFieldErrors({});
     setFirstInvalidField(null);
   }
 
   function validateProjectFields() {
+    setValidationAttempt((current) => current + 1);
     const result = projectSubmissionSchema.safeParse(draft);
     if (result.success) {
       setFieldErrors({});
@@ -255,16 +274,26 @@ export function CritiqueFlow() {
           submission,
           critic,
           onStatus: (status) =>
-            setGenerationStatus({ provider: "local", ...status }),
+            setGenerationStatus((current) => ({
+              provider: "local",
+              storage: current?.storage,
+              ...status,
+            })),
         });
       } catch (localError) {
         console.warn("[CRITIQUER_LOCAL_AI_ERROR]", localError);
         if (draft.aiMode !== "local-with-openai") {
-          throw new Error(describeLocalGenerationError(localError, draft.language));
+          throw new Error(
+            describeLocalGenerationError(localError, draft.language),
+          );
         }
 
         setGenerationStatus({ provider: "openai", phase: "fallback" });
-        apiResponse = await requestOpenAICritique(draft, draft.language);
+        apiResponse = await requestOpenAICritique(
+          draft,
+          draft.language,
+          accessCode,
+        );
       }
       const id =
         typeof crypto !== "undefined" && "randomUUID" in crypto
@@ -276,10 +305,7 @@ export function CritiqueFlow() {
         criticName: selectedCritic.displayName,
       });
 
-      window.sessionStorage.setItem(
-        `critiquer-result-${id}`,
-        JSON.stringify(result),
-      );
+      saveResult(id, result, draft);
       router.push(`/critique/${id}`);
     } catch (error) {
       setErrors([
@@ -302,6 +328,7 @@ export function CritiqueFlow() {
         provider={generationStatus.provider}
         phase={generationStatus.phase}
         progress={generationStatus.progress}
+        storage={generationStatus.storage}
       />
     );
   }
@@ -375,9 +402,7 @@ export function CritiqueFlow() {
 
           <div className="mt-4 border border-rule bg-white/35 p-5">
             <p className="text-xs uppercase tracking-normal text-muted">
-              {draft.language === "ko"
-                ? "선택한 교수님"
-                : "Selected Professor"}
+              {draft.language === "ko" ? "선택한 교수님" : "Selected Professor"}
             </p>
             <h2 className="mt-3 font-serif text-2xl">
               {selectedCritic.displayName}
@@ -394,7 +419,12 @@ export function CritiqueFlow() {
           className="border border-ink bg-paper sheet-shadow"
         >
           {errors.length > 0 ? (
-            <div className="border-b border-clay bg-white/70 p-4 text-sm text-clay">
+            <div
+              ref={errorRef}
+              tabIndex={-1}
+              role="alert"
+              className="border-b border-clay bg-white/70 p-4 text-sm text-clay"
+            >
               {errors.map((error) => (
                 <p key={error}>{error}</p>
               ))}
@@ -420,7 +450,12 @@ export function CritiqueFlow() {
             ) : null}
 
             {step === 3 ? (
-              <StepCritiqueSettings draft={draft} updateDraft={updateDraft} />
+              <StepCritiqueSettings
+                draft={draft}
+                updateDraft={updateDraft}
+                accessCode={accessCode}
+                onAccessCodeChange={setAccessCode}
+              />
             ) : null}
           </div>
 
@@ -531,17 +566,21 @@ function describeLocalGenerationError(error: unknown, language: Language) {
 async function requestOpenAICritique(
   draft: ProjectDraft,
   language: Language,
+  accessCode: string,
 ): Promise<CritiqueApiResponse> {
   const response = await fetch("/api/critique", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${encodeURIComponent(accessCode.trim())}`,
+    },
     body: JSON.stringify(draft),
   });
 
   if (!response.ok) {
-    const body = (await response.json().catch(() => null)) as
-      | { error?: { message?: string } }
-      | null;
+    const body = (await response.json().catch(() => null)) as {
+      error?: { message?: string };
+    } | null;
     throw new Error(
       body?.error?.message ||
         (language === "ko"
@@ -550,7 +589,7 @@ async function requestOpenAICritique(
     );
   }
 
-  return (await response.json()) as CritiqueApiResponse;
+  return critiqueApiResponseSchema.parse(await response.json());
 }
 
 function StepChooseCritic({
@@ -746,9 +785,13 @@ function StepProjectDescription({
 function StepCritiqueSettings({
   draft,
   updateDraft,
+  accessCode,
+  onAccessCodeChange,
 }: {
   draft: ProjectDraft;
   updateDraft: (field: keyof ProjectDraft, value: string) => void;
+  accessCode: string;
+  onAccessCodeChange: (value: string) => void;
 }) {
   return (
     <section
@@ -824,6 +867,20 @@ function StepCritiqueSettings({
           ]}
           onChange={(value) => updateDraft("aiMode", value)}
         />
+        {draft.aiMode === "local-with-openai" ? (
+          <label className="grid gap-2 text-sm">
+            {draft.language === "ko"
+              ? "외부 서비스 접속 코드"
+              : "External service access code"}
+            <input
+              type="password"
+              value={accessCode}
+              onChange={(event) => onAccessCodeChange(event.target.value)}
+              autoComplete="off"
+              className="focus-ring w-full border border-rule bg-white/60 p-3"
+            />
+          </label>
+        ) : null}
       </div>
     </section>
   );
@@ -837,7 +894,10 @@ function LanguageToggle({
   onChange: (language: Language) => void;
 }) {
   return (
-    <div className="grid grid-cols-2 border border-rule bg-paper" aria-label="Language">
+    <div
+      className="grid grid-cols-2 border border-rule bg-paper"
+      aria-label="Language"
+    >
       {(["ko", "en"] as const).map((option) => (
         <button
           key={option}
@@ -878,7 +938,9 @@ function TextInput({
 }) {
   const id = `project-${field}`;
   return (
-    <label className={`grid gap-2 border bg-white/30 p-4 ${error ? "border-clay" : "border-rule"}`}>
+    <label
+      className={`grid gap-2 border bg-white/30 p-4 ${error ? "border-clay" : "border-rule"}`}
+    >
       <span className="text-sm font-semibold text-ink">
         {label} {required ? <span className="text-clay">*</span> : null}
       </span>
@@ -890,7 +952,11 @@ function TextInput({
         aria-describedby={error ? `${id}-error` : undefined}
         className="focus-ring border-0 border-b border-ink/35 bg-transparent px-0 py-2 text-base outline-none"
       />
-      {error ? <span id={`${id}-error`} className="text-sm text-clay">{error}</span> : null}
+      {error ? (
+        <span id={`${id}-error`} className="text-sm text-clay">
+          {error}
+        </span>
+      ) : null}
     </label>
   );
 }
@@ -912,7 +978,9 @@ function TextArea({
 }) {
   const id = `project-${field}`;
   return (
-    <label className={`grid gap-2 border bg-white/30 p-4 ${error ? "border-clay" : "border-rule"}`}>
+    <label
+      className={`grid gap-2 border bg-white/30 p-4 ${error ? "border-clay" : "border-rule"}`}
+    >
       <span className="text-sm font-semibold text-ink">
         {label} {required ? <span className="text-clay">*</span> : null}
       </span>
@@ -925,7 +993,11 @@ function TextArea({
         rows={4}
         className="focus-ring min-h-32 resize-y border-0 border-b border-ink/35 bg-transparent px-0 py-2 text-base leading-7 outline-none"
       />
-      {error ? <span id={`${id}-error`} className="text-sm text-clay">{error}</span> : null}
+      {error ? (
+        <span id={`${id}-error`} className="text-sm text-clay">
+          {error}
+        </span>
+      ) : null}
     </label>
   );
 }

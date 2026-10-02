@@ -82,7 +82,6 @@ export const leCorbusier: CriticProfile = {
   ],
   associatedReferenceIds: [
     "villa-savoye",
-    "unite-dhabitation",
     "ronchamp",
   ],
   sourceIds: ["le-corbusier-towards-new-architecture", "le-corbusier-oeuvre-complete"],

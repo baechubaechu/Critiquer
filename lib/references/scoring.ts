@@ -1,10 +1,12 @@
 import type { CritiqueResponse, ProjectAnalysis } from "@/lib/ai/schemas";
 import type { ReferenceEntry } from "@/lib/references/types";
 import type { ProjectSubmission } from "@/lib/validation/submission";
+import { normalizeSearchTerms } from "@/lib/references/search-terms";
 
 export type ScoredReference = {
   reference: ReferenceEntry;
   score: number;
+  relevanceScore: number;
   reasons: string[];
 };
 
@@ -21,10 +23,12 @@ export function scoreReference({
   critique: CritiqueResponse;
   selectedCriticId: string;
 }): ScoredReference {
-  const queryTerms = normalizeTerms([
+  const topics = [
     submission.problem,
     submission.concept,
     submission.designStrategies,
+    submission.critiqueRequest,
+    submission.environmentalStrategy ?? "",
     submission.reviewFocus,
     ...analysis.coreProblems,
     ...analysis.statedConcepts,
@@ -40,19 +44,12 @@ export function scoreReference({
     critique.centralTension.title,
     critique.centralTension.explanation,
     ...critique.recommendationQueries.map((query) => query.topic),
-  ]);
-
-  let score = 0;
-  const reasons: string[] = [];
-
-  score += scoreOverlap(queryTerms, reference.problemsAddressed, 4, reasons);
-  score += scoreOverlap(queryTerms, reference.strategies, 3, reasons);
-  score += scoreOverlap(queryTerms, reference.themes, 3, reasons);
-  score += scoreOverlap(queryTerms, reference.spatialCharacteristics, 2, reasons);
-  score += scoreOverlap(queryTerms, reference.circulationStrategies, 2, reasons);
-  score += scoreOverlap(queryTerms, reference.structuralStrategies, 2, reasons);
-  score += scoreOverlap(queryTerms, reference.materialStrategies, 2, reasons);
-  score += scoreOverlap(queryTerms, reference.urbanStrategies, 2, reasons);
+  ];
+  const { score: relevanceScore, reasons } = scoreReferenceTopics(
+    reference,
+    topics,
+  );
+  let score = relevanceScore;
 
   if (reference.relevantProjectStages.includes(submission.stage)) {
     score += 1.5;
@@ -64,28 +61,43 @@ export function scoreReference({
     reasons.push("selected critic");
   }
 
-  return { reference, score, reasons };
+  return { reference, score, relevanceScore, reasons };
 }
 
-function normalizeTerms(values: string[]) {
-  return values
-    .join(" ")
-    .toLowerCase()
-    .split(/[^a-z0-9가-힣]+/u)
-    .filter((term) => term.length >= 2);
+export function scoreReferenceTopics(
+  reference: ReferenceEntry,
+  topics: string[],
+) {
+  const queryTerms = normalizeSearchTerms(topics);
+  const reasons: string[] = [];
+  let score = 0;
+  for (const [terms, weight] of [
+    [reference.problemsAddressed, 4],
+    [reference.buildingTypes, 3],
+    [reference.strategies, 3],
+    [reference.themes, 3],
+    [reference.spatialCharacteristics, 2],
+    [reference.circulationStrategies, 2],
+    [reference.structuralStrategies, 2],
+    [reference.materialStrategies, 2],
+    [reference.environmentalStrategies, 2],
+    [reference.urbanStrategies, 2],
+  ] as [string[], number][])
+    score += scoreOverlap(queryTerms, terms, weight, reasons);
+  return { score, reasons: [...new Set(reasons)] };
 }
 
 function scoreOverlap(
-  queryTerms: string[],
+  queryTerms: Set<string>,
   referenceTerms: string[],
   weight: number,
   reasons: string[],
 ) {
-  const referenceText = referenceTerms.join(" ").toLowerCase();
+  const referenceTokens = normalizeSearchTerms(referenceTerms);
   let matches = 0;
 
   for (const term of queryTerms) {
-    if (referenceText.includes(term)) {
+    if (referenceTokens.has(term)) {
       matches += 1;
     }
   }

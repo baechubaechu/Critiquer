@@ -1,8 +1,10 @@
 import { z } from "zod";
 
+const content = z.string().trim().min(1);
+
 export const projectAnalysisSchema = z.object({
   projectType: z.array(z.string()),
-  projectIntent: z.string(),
+  projectIntent: content,
   coreProblems: z.array(z.string()),
   statedConcepts: z.array(z.string()),
   describedDesignStrategies: z.array(z.string()),
@@ -18,50 +20,59 @@ export const projectAnalysisSchema = z.object({
   statedStrengths: z.array(z.string()),
   unresolvedIssues: z.array(z.string()),
   missingInformation: z.array(z.string()),
-  centralIntentStrategyGap: z.string().optional(),
+  centralIntentStrategyGap: content.optional(),
 });
 
 export const critiqueResponseSchema = z.object({
   interpretation: z.object({
-    projectIntent: z.string(),
-    understoodStrategy: z.string(),
+    projectIntent: content,
+    understoodStrategy: content,
     missingInformation: z.array(z.string()),
   }),
   centralTension: z.object({
-    title: z.string(),
-    explanation: z.string(),
+    title: content,
+    explanation: content,
   }),
-  critiquePoints: z.array(
-    z.object({
-      id: z.string(),
-      title: z.string(),
-      observation: z.string(),
-      whyItMatters: z.string(),
-      designConsequence: z.string(),
-      confidence: z.enum(["high", "medium", "low"]),
-    }),
-  ),
-  questionsForDesigner: z.array(z.string()),
+  critiquePoints: z
+    .array(
+      z.object({
+        id: content,
+        title: content,
+        observation: content,
+        whyItMatters: content,
+        designConsequence: content,
+        confidence: z.enum(["high", "medium", "low"]),
+      }),
+    )
+    .length(3)
+    .refine(
+      (points) =>
+        new Set(points.map((point) => point.id)).size === points.length,
+      "Critique point IDs must be unique",
+    ),
+  questionsForDesigner: z.array(content).min(3).max(4),
   suggestedExperiment: z.object({
-    title: z.string(),
-    instruction: z.string(),
-    expectedLearning: z.string(),
+    title: content,
+    instruction: content,
+    expectedLearning: content,
   }),
-  recommendationQueries: z.array(
-    z.object({
-      topic: z.string(),
-      intent: z.enum([
-        "closest-precedent",
-        "alternative-approach",
-        "critical-counterexample",
-      ]),
-    }),
-  ),
+  recommendationQueries: z
+    .array(
+      z.object({
+        topic: content,
+        intent: z.enum([
+          "closest-precedent",
+          "alternative-approach",
+          "critical-counterexample",
+        ]),
+      }),
+    )
+    .length(3),
   architectLens: z.object({
-    appliedPrinciples: z.array(z.string()),
-    perspectiveLimitations: z.array(z.string()),
+    appliedPrinciples: z.array(content).min(1),
+    perspectiveLimitations: z.array(content).min(1),
   }),
-  disclaimer: z.string(),
+  disclaimer: content,
 });
 
 export const referenceRecommendationSchema = z.object({
@@ -70,6 +81,7 @@ export const referenceRecommendationSchema = z.object({
     "closest-precedent",
     "alternative-approach",
     "critical-counterexample",
+    "related-study",
   ]),
   relevanceTitle: z.string(),
   relevanceExplanation: z.string(),

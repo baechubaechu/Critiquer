@@ -83,7 +83,6 @@ export const remKoolhaas: CriticProfile = {
   associatedReferenceIds: [
     "seattle-central-library",
     "kunsthal-rotterdam",
-    "casa-da-musica",
   ],
   sourceIds: ["koolhaas-delirious-new-york", "oma-smlxl"],
 };

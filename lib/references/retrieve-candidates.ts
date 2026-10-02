@@ -26,6 +26,7 @@ export function retrieveReferenceCandidates({
         selectedCriticId,
       }),
     )
+    .filter((candidate) => candidate.relevanceScore > 0)
     .sort((a, b) => b.score - a.score || a.reference.title.localeCompare(b.reference.title))
     .slice(0, limit);
 }

@@ -82,7 +82,6 @@ export const louisKahn: CriticProfile = {
   associatedReferenceIds: [
     "salk-institute",
     "kimbell-art-museum",
-    "exeter-library",
   ],
   sourceIds: ["kahn-writings-lectures-interviews", "kahn-conversations"],
 };

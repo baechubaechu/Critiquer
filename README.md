@@ -1,100 +1,79 @@
 # CRITIQUER
 
-CRITIQUER is an architectural critique web MVP for architecture students.
+건축 설계를 설명하고 교수님의 관점을 선택해 크리틱을 받는 웹 앱입니다.
+기본 생성 방식은 브라우저에서 실행하는 Gemma 4 E4B입니다.
 
-The first implementation covers Phase 1 and Phase 2 from the development brief:
+## 실행
 
-- Next.js, TypeScript, App Router, and Tailwind CSS setup
-- Editorial landing page
-- Multi-step critique input flow
-- Critic selection interface
-- Project submission form
-- Critique settings step
-- AI loading state
-- AI result page
-- Session-local draft and result persistence
-
-AI generation uses Gemma 4 E4B in the browser by default. The user may
-explicitly allow an OpenAI fallback in critique settings. Reference
-recommendations remain deterministic and local.
-
-## AI Model Plan
-
-The optional OpenAI fallback defaults to:
-
-```text
-gpt-5.6-luna
-```
-
-This keeps optional API testing cheaper. Higher-quality review modes can later test
-`gpt-5.6-terra` or `gpt-5.6-sol` after the core flow is working.
-
-The model name is prepared in:
-
-- `.env.example`
-- `lib/ai/config.ts`
-- `app/api/critique/route.ts`
-
-## API Setup
-
-The default local-only mode needs no API key. To enable the optional OpenAI
-fallback, create `.env.local` in the project root:
-
-```env
-OPENAI_API_KEY=your_api_key_here
-OPENAI_MODEL=gpt-5.6-luna
-```
-
-The API key is only read inside the Next.js server route. It is not exposed to
-the browser. Local-only mode never calls that route, including when local
-generation fails. The first local run downloads an approximately 3 GB model
-into the browser; WebGPU support and sufficient device memory are required.
-
-## Run Locally
+Node.js 22.20 이상을 사용합니다. 다른 컴퓨터에서 이어서 개발할 때는 다음 순서로 실행하세요.
 
 ```bash
-npm install
+npm ci
 npm run dev
 ```
 
-Then open:
+주소는 `http://localhost:3000`입니다. 로컬만 사용할 때는 환경변수가 필요하지 않습니다.
+최신 Chrome의 WebGPU와 충분한 메모리·저장 공간이 필요합니다.
+첫 실행에서 약 3GB 모델을 받습니다. 브라우저가 영구 저장 요청을 허용하지 않거나
+저장 공간이 부족하면 이후에 다시 다운로드할 수 있습니다.
 
-```text
-http://localhost:3000
+## 외부 서비스 설정
+
+외부 호출은 서버에서 기본으로 차단합니다. API 키만 등록해도 호출할 수 없습니다.
+사용하려면 `.env.example`을 참고해 `.env.local` 또는 Vercel 환경변수에 설정합니다.
+
+```env
+ENABLE_EXTERNAL_CRITIQUE=true
+EXTERNAL_CRITIQUE_ACCESS_CODE=replace-with-a-long-random-access-code
+OPENAI_API_KEY=발급받은-키
+OPENAI_MODEL=사용할-API-모델-ID
 ```
 
-## Useful Commands
+화면에서 ‘외부 서비스 전환 허용’을 선택하고 접속 코드를 입력하면,
+로컬 생성에 실패했을 때 외부 서비스로 전환합니다. 접속 코드는 브라우저 저장소에 보관하지 않습니다.
+API 키와 접속 코드에는 `NEXT_PUBLIC_` 접두사를 붙이지 마세요.
+환경변수를 바꾼 뒤에는 개발 서버를 재시작하거나 Vercel에서 재배포해야 합니다.
+
+외부 요청은 서버 인스턴스마다 시간당 5회로 제한합니다. Vercel에서 여러 인스턴스가
+실행되거나 서버가 재시작되면 전체 합계는 5회를 넘을 수 있습니다.
+공개 서비스로 확장할 때는 계정 인증과 공유 저장소 기반 한도를 추가하고,
+서비스 제공자의 비용 한도·알림도 설정해야 합니다.
+
+## 저장과 결과
+
+작성 중인 입력과 결과는 해당 브라우저의 사이트 저장소에 보관합니다.
+이전 버전의 탭 저장 데이터도 읽을 수 있습니다. 결과 주소를 다른 기기에서 열면
+내용을 가져올 수 없으며, 샘플 크리틱으로 대체하지 않습니다.
+사이트 데이터를 삭제하면 보관한 입력과 결과도 삭제됩니다.
+‘결과 복사’는 질문, 실험, 레퍼런스를 포함한 전체 내용을 복사합니다.
+복사 권한을 사용할 수 없으면 텍스트 파일로 다운로드합니다.
+
+## 크리틱과 추천
+
+- 필수 내용, 크리틱 포인트 3개, 질문 3~4개를 검증합니다.
+- 로컬 입력 토큰 수는 보수적으로 추정하고, 실제 초기 문맥 토큰 수와 함께 사용합니다.
+  총 문맥은 8,192토큰이며 답변 공간은 입력량에 따라 2,048~4,096토큰으로 조절합니다.
+- 형식 재시도는 새 대화에서 시작해 실패한 답변이 문맥에 누적되지 않습니다.
+- 레퍼런스는 한영 공통 검색어를 이용하는 규칙 기반 추천입니다. 반복 단어로 점수가 늘어나지 않습니다.
+- 추천 주제에 맞는 자료가 없으면 추천 목록을 비워둡니다. 근거 없이 ‘비판적 반례’를 붙이지 않습니다.
+
+## 교수 자료
+
+`lib/critics`에는 교수 5명의 관점 요약이 있고, `lib/references/database.ts`에는
+작품·도시 사례 10개가 있습니다. `lib/sources/database.ts`는 관련 문헌 목록과 확인된 링크를 관리합니다.
+문헌 목록의 제목과 메모는 생성 시 참고 정보로 전달하지만 **책 본문을 저장하거나 검색하는 기능은 아직 없습니다.**
+쪽수와 인용 근거가 연결된 자료 검색은 다음 단계에서 구축할 작업입니다.
+확인하지 않은 자료를 모델이 읽었다고 표현하거나 인용문을 만들어내지 않도록 지시합니다.
+
+## 확인 명령
 
 ```bash
+npm test
 npm run typecheck
 npm run lint
 npm run build
+npm audit
 ```
 
-## Editing Text
-
-Most Korean and English UI copy is centralized in `lib/i18n.ts`.
-Critique lens cards and fallback sample results live in `lib/mock-data.ts`.
-
-For a beginner-friendly Korean guide, see:
-
-```text
-docs/text-editing-guide.md
-```
-
-## Current Architecture
-
-The app is organized around the MVP user journey:
-
-- `app/page.tsx` renders the landing page.
-- `app/critique/page.tsx` renders the multi-step critique form.
-- `app/critique/[id]/page.tsx` renders a stored mock result.
-- `app/api/critique/route.ts` validates submissions and calls OpenAI from the
-  server only when the user has allowed fallback and local generation fails.
-- `components/` contains reusable UI surfaces for critics, loading, form flow,
-  and result display.
-- `lib/mock-data.ts` holds temporary critic summaries and mock critique output.
-
-The mock data layer is still used for UI summaries and fallback display data.
-The production critique path now uses typed critic profiles, validation schemas,
-reference seed data, and a server AI route.
+테스트는 실제 모델 다운로드나 유료 호출 없이, 입력 복원·결과 저장·출력 검증·추천·API 보호를 확인합니다.
+문구 수정 위치는 `docs/text-editing-guide.md`에 정리되어 있습니다.

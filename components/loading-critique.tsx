@@ -1,5 +1,8 @@
 import { loadingCopy, text, type Language } from "@/lib/i18n";
-import { LOCAL_MODEL_NAME, type LocalGenerationPhase } from "@/lib/ai/local-gemma";
+import {
+  LOCAL_MODEL_NAME,
+  type LocalGenerationPhase,
+} from "@/lib/ai/local-gemma";
 
 export function LoadingCritique({
   criticName,
@@ -7,12 +10,14 @@ export function LoadingCritique({
   provider,
   phase,
   progress,
+  storage,
 }: {
   criticName: string;
   language: Language;
   provider: "local" | "openai";
   phase: LocalGenerationPhase | "fallback";
   progress?: number;
+  storage?: "persistent" | "temporary" | "unavailable";
 }) {
   const status = getStatusText({ language, provider, phase });
 
@@ -29,7 +34,11 @@ export function LoadingCritique({
             </h1>
           </div>
           <div className="border border-rule bg-white/35 px-4 py-3 text-sm text-muted">
-            {provider === "local" ? LOCAL_MODEL_NAME : language === "ko" ? "외부 서비스" : "External service"}
+            {provider === "local"
+              ? LOCAL_MODEL_NAME
+              : language === "ko"
+                ? "외부 서비스"
+                : "External service"}
           </div>
         </div>
         <div className="mt-6" aria-live="polite">
@@ -48,14 +57,28 @@ export function LoadingCritique({
           {phase === "downloading" ? (
             <p className="mt-3 text-sm leading-6 text-muted">
               {language === "ko"
-                ? "첫 실행에서는 약 3GB 모델을 받습니다. 완료되면 이 사이트의 전용 저장소에 보관합니다."
-                : "The first run downloads a model of about 3GB and keeps it in this site's dedicated storage."}
+                ? "첫 실행에서는 약 3GB 모델을 받습니다. 브라우저 저장 공간이 충분하면 다음에도 사용할 수 있도록 보관합니다."
+                : "The first run downloads about 3GB. The browser saves it for reuse when storage is available."}
+            </p>
+          ) : null}
+          {storage === "unavailable" || storage === "temporary" ? (
+            <p role="status" className="mt-3 text-sm leading-6 text-clay">
+              {language === "ko"
+                ? storage === "unavailable"
+                  ? "모델을 저장하지 못했습니다. 다음 실행에서 다시 다운로드할 수 있습니다."
+                  : "모델을 임시로 저장했습니다. 브라우저가 공간을 정리하면 다시 다운로드할 수 있습니다."
+                : storage === "unavailable"
+                  ? "The model could not be saved. Another download may be needed next time."
+                  : "The model is stored temporarily. Your browser may remove it when reclaiming space."}
             </p>
           ) : null}
         </div>
         <div className="mt-8 grid gap-3">
           {loadingCopy.stages[language].map((stage, index) => (
-            <div key={stage} className="grid grid-cols-[40px_1fr] items-center gap-4">
+            <div
+              key={stage}
+              className="grid grid-cols-[40px_1fr] items-center gap-4"
+            >
               <span className="grid h-9 w-9 place-items-center border border-ink text-sm text-muted">
                 {index + 1}
               </span>
@@ -99,7 +122,8 @@ function getStatusText({
   if (phase === "checking") return "이 기기의 실행 환경을 확인하고 있습니다";
   if (phase === "downloading") return "로컬 모델을 다운로드하고 있습니다";
   if (phase === "loading") return "브라우저에 모델을 불러오고 있습니다";
-  if (phase === "fallback") return "이 기기에서 실행하기 어려워 외부 서비스로 전환합니다";
+  if (phase === "fallback")
+    return "이 기기에서 실행하기 어려워 외부 서비스로 전환합니다";
   return provider === "local"
     ? "이 기기에서 크리틱을 생성하고 있습니다"
     : "외부 서비스에서 크리틱을 생성하고 있습니다";

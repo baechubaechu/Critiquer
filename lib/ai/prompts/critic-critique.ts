@@ -1,6 +1,7 @@
 import type { CriticProfile } from "@/lib/critics/types";
 import type { ProjectSubmission } from "@/lib/validation/submission";
 import { commonCritiqueRules } from "@/lib/ai/prompts/common-critique";
+import { getSourceMetadata } from "@/lib/sources";
 
 export function buildFirstPassPrompt({
   submission,
@@ -14,6 +15,13 @@ export function buildFirstPassPrompt({
       ? "Write the final critique in Korean. Preserve proper names and important architectural terms in English when useful."
       : "Write the final critique in English.";
 
+  const profile = {
+    name: critic.name,
+    coreBeliefs: critic.coreBeliefs,
+    evaluationAxes: critic.evaluationAxes,
+    criticalQuestions: critic.criticalQuestions,
+    perspectiveLimitations: critic.perspectiveLimitations,
+  };
   return `
 ${commonCritiqueRules}
 
@@ -21,10 +29,13 @@ Output language:
 ${outputLanguage}
 
 Selected critic profile:
-${JSON.stringify(critic, null, 2)}
+${JSON.stringify(profile)}
+
+Research bibliography (metadata only; do not claim to have read full books or invent quotations/page citations):
+${JSON.stringify(getSourceMetadata(critic.sourceIds).map((source) => ({ title: source.title, notes: source.notes })))}
 
 Student project submission:
-${JSON.stringify(submission, null, 2)}
+${JSON.stringify(submission)}
 
 Tone:
 - constructive: calm studio guidance

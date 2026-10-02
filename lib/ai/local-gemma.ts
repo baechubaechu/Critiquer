@@ -1,4 +1,11 @@
-import type { Engine, Message, Schema, Tool } from "@litert-lm/core";
+import type {
+  Conversation,
+  ConversationConfig,
+  Engine,
+  Message,
+  Schema,
+  Tool,
+} from "@litert-lm/core";
 import { firstPassJsonSchema } from "@/lib/ai/json-schema";
 import { buildFirstPassPrompt } from "@/lib/ai/prompts/critic-critique";
 import {
@@ -13,6 +20,11 @@ import {
   retrieveReferenceCandidates,
 } from "@/lib/references";
 import type { ProjectSubmission } from "@/lib/validation/submission";
+import {
+  localOutputBudget,
+  LOCAL_CONTEXT_TOKENS,
+  LOCAL_OUTPUT_TOKENS,
+} from "@/lib/ai/local-budget";
 
 export const LOCAL_MODEL_NAME = "Gemma 4 E4B (로컬)";
 
@@ -24,7 +36,8 @@ const critiqueTool = {
   type: "function",
   function: {
     name: CRITIQUE_TOOL_NAME,
-    description: "Submit the complete architectural critique in the required structure.",
+    description:
+      "Submit the complete architectural critique in the required structure.",
     parameters: toLiteRtSchema(firstPassJsonSchema),
   },
 } satisfies Tool;
@@ -38,6 +51,7 @@ export type LocalGenerationPhase =
 export type LocalGenerationStatus = {
   phase: LocalGenerationPhase;
   progress?: number;
+  storage?: "persistent" | "temporary" | "unavailable";
 };
 
 type StatusListener = (status: LocalGenerationStatus) => void;
@@ -58,58 +72,78 @@ export async function generateLocalCritique({
   const localEngine = await getEngine(onStatus);
   onStatus({ phase: "generating" });
 
-  const conversation = await localEngine.createConversation({
-    enableConstrainedDecoding: true,
-    sessionConfig: {
-      maxOutputTokens: 4096,
-      samplerParams: { temperature: 0.35, p: 0.9, k: 40 },
-    },
-    preface: {
-      messages: [
-        {
-          role: "system",
-          content:
-            "You are CRITIQUER, an architectural studio critic. Submit the complete result through the provided tool.",
-        },
-      ],
-      tools: [critiqueTool],
-    },
+  const prompt = `${buildFirstPassPrompt({ submission, critic })}\n\nCall ${CRITIQUE_TOOL_NAME} exactly once with the complete result. Keep each field concise.`;
+  let firstPass: FirstPassResponse | null = null;
+  for (let attempt = 0; attempt < 2 && !firstPass; attempt += 1) {
+    const config: ConversationConfig = {
+      enableConstrainedDecoding: true,
+      prefillPrefaceOnInit: true,
+      sessionConfig: {
+        maxOutputTokens: LOCAL_OUTPUT_TOKENS,
+        samplerParams: { temperature: 0.35, p: 0.9, k: 40 },
+      },
+      preface: {
+        messages: [
+          {
+            role: "system",
+            content:
+              "You are CRITIQUER, an architectural studio critic. Submit the complete result through the provided tool.",
+          },
+        ],
+        tools: [critiqueTool],
+      },
+    };
+    let conversation: Conversation | null =
+      await localEngine.createConversation(config);
+
+    try {
+      const attemptPrompt =
+        attempt === 0
+          ? prompt
+          : `${prompt}\nInclude every required field, exactly three complete critique points, three or four questions, and three recommendation queries. Do not leave required text empty.`;
+      const outputTokens = localOutputBudget(
+        attemptPrompt,
+        await conversation.getTokenCount(),
+        submission.language,
+      );
+      if (outputTokens < LOCAL_OUTPUT_TOKENS) {
+        await conversation.delete();
+        conversation = null;
+        conversation = await localEngine.createConversation({
+          ...config,
+          sessionConfig: {
+            ...config.sessionConfig,
+            maxOutputTokens: outputTokens,
+          },
+        });
+      }
+      firstPass = parseFirstPassMessage(
+        await conversation.sendMessage(attemptPrompt),
+      );
+    } finally {
+      await conversation?.delete();
+    }
+  }
+
+  if (!firstPass) {
+    throw new Error("이 기기에서 크리틱 형식을 맞추지 못했습니다.");
+  }
+
+  const candidates = retrieveReferenceCandidates({
+    submission,
+    analysis: firstPass.analysis,
+    critique: firstPass.critique,
+    selectedCriticId: critic.id,
   });
 
-  try {
-    const prompt = `${buildFirstPassPrompt({ submission, critic })}\n\nCall ${CRITIQUE_TOOL_NAME} exactly once with the complete result.`;
-    const firstResponse = await conversation.sendMessage(prompt);
-    let firstPass = parseFirstPassMessage(firstResponse);
-
-    if (!firstPass) {
-      const repairResponse = await conversation.sendMessage(
-        `The previous tool arguments were incomplete. Call ${CRITIQUE_TOOL_NAME} again with every required field, exactly three critique points, three or four questions, and exactly three recommendation queries.`,
-      );
-      firstPass = parseFirstPassMessage(repairResponse);
-    }
-
-    if (!firstPass) {
-      throw new Error("이 기기에서 크리틱 형식을 맞추지 못했습니다.");
-    }
-
-    const candidates = retrieveReferenceCandidates({
-      submission,
-      analysis: firstPass.analysis,
+  return critiqueApiResponseSchema.parse({
+    analysis: firstPass.analysis,
+    critique: firstPass.critique,
+    recommendations: createDeterministicRecommendations({
+      candidates,
       critique: firstPass.critique,
-      selectedCriticId: critic.id,
-    });
-
-    return critiqueApiResponseSchema.parse({
-      analysis: firstPass.analysis,
-      critique: firstPass.critique,
-      recommendations: createDeterministicRecommendations({
-        candidates,
-        critique: firstPass.critique,
-      }),
-    });
-  } finally {
-    await conversation.delete();
-  }
+    }),
+  });
 }
 
 async function getEngine(onStatus: StatusListener) {
@@ -143,54 +177,95 @@ async function createEngine(onStatus: StatusListener) {
   return Engine.create({
     model: modelStream,
     mainExecutorSettings: {
-      maxNumTokens: 8192,
+      maxNumTokens: LOCAL_CONTEXT_TOKENS,
     },
   });
 }
 
 async function fetchModel(onStatus: StatusListener) {
   const cachedResponse = await getCachedModelResponse();
-  const response =
-    cachedResponse ?? (await fetch(MODEL_URL, { cache: "force-cache" }));
+  if (cachedResponse?.body) {
+    const persistent = await requestPersistentModelStorage();
+    onStatus({
+      phase: "loading",
+      progress: 100,
+      storage: persistent ? "persistent" : "temporary",
+    });
+    return cachedResponse.body;
+  }
+  const download = new AbortController();
+  let response = await fetch(MODEL_URL, {
+    cache: "force-cache",
+    signal: download.signal,
+  });
   if (!response.ok || !response.body) {
     throw new Error("이 기기에서 사용할 모델을 내려받지 못했습니다.");
   }
 
-  const cacheWrite = cachedResponse ? null : cacheModelResponse(response.clone());
-  const total = Number(response.headers.get("content-length")) || 0;
-  const reader = response.body.getReader();
-  let received = 0;
-  onStatus(
-    cachedResponse
-      ? { phase: "loading", progress: 100 }
-      : { phase: "downloading", progress: total ? 0 : undefined },
-  );
+  if (await canCacheModel(response)) {
+    try {
+      const cache = await caches.open(MODEL_CACHE_NAME);
+      const tracked = new Response(trackDownload(response, onStatus), {
+        headers: response.headers,
+      });
+      // Save first, then read the cached stream. Avoid teeing a multi-gigabyte response.
+      await cache.put(MODEL_URL, tracked);
+      const stored = await cache.match(MODEL_URL);
+      if (stored?.body) {
+        const persistent = await requestPersistentModelStorage();
+        onStatus({
+          phase: "loading",
+          progress: 100,
+          storage: persistent ? "persistent" : "temporary",
+        });
+        return stored.body;
+      }
+    } catch (error) {
+      download.abort();
+      console.warn("[CRITIQUER_MODEL_CACHE_ERROR]", error);
+    }
+    response = await fetch(MODEL_URL, { cache: "force-cache" });
+    if (!response.ok || !response.body)
+      throw new Error("이 기기에서 사용할 모델을 내려받지 못했습니다.");
+  }
+  onStatus({ phase: "loading", storage: "unavailable" });
+  return trackDownload(response, onStatus);
+}
 
+async function canCacheModel(response: Response) {
+  if (!("caches" in window)) return false;
+  try {
+    const estimate = await navigator.storage?.estimate?.();
+    const expectedSize =
+      Number(response.headers.get("content-length")) || 3_500_000_000;
+    return (
+      !estimate?.quota || estimate.quota - (estimate.usage ?? 0) >= expectedSize
+    );
+  } catch {
+    return true;
+  }
+}
+
+function trackDownload(response: Response, onStatus: StatusListener) {
+  const total = Number(response.headers.get("content-length")) || 0;
+  const reader = response.body!.getReader();
+  let received = 0;
+  onStatus({ phase: "downloading", progress: total ? 0 : undefined });
   return new ReadableStream<Uint8Array>({
     async pull(controller) {
       const { done, value } = await reader.read();
       if (done) {
-        if (cacheWrite) {
-          try {
-            await cacheWrite;
-            await requestPersistentModelStorage();
-          } catch (error) {
-            console.warn("[CRITIQUER_MODEL_CACHE_ERROR]", error);
-          }
-        }
         controller.close();
         return;
       }
 
       received += value.byteLength;
-      if (!cachedResponse) {
-        onStatus({
-          phase: "downloading",
-          progress: total
-            ? Math.min(100, Math.round((received / total) * 100))
-            : undefined,
-        });
-      }
+      onStatus({
+        phase: "downloading",
+        progress: total
+          ? Math.min(100, Math.round((received / total) * 100))
+          : undefined,
+      });
       controller.enqueue(value);
     },
     cancel(reason) {
@@ -209,13 +284,6 @@ async function getCachedModelResponse() {
     console.warn("[CRITIQUER_MODEL_CACHE_READ_ERROR]", error);
     return null;
   }
-}
-
-async function cacheModelResponse(response: Response) {
-  if (!("caches" in window)) return;
-
-  const cache = await caches.open(MODEL_CACHE_NAME);
-  await cache.put(MODEL_URL, response);
 }
 
 async function requestPersistentModelStorage() {
@@ -248,7 +316,9 @@ function parseFirstPassMessage(message: Message) {
     (call) => call.function.name === CRITIQUE_TOOL_NAME,
   );
   if (toolCall) {
-    const parsed = firstPassResponseSchema.safeParse(toolCall.function.arguments);
+    const parsed = firstPassResponseSchema.safeParse(
+      toolCall.function.arguments,
+    );
     if (parsed.success) return parsed.data;
   }
 

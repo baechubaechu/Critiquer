@@ -21,6 +21,7 @@ export class OpenAIRequestError extends Error {
   constructor(
     message: string,
     public status?: number,
+    public code?: string,
   ) {
     super(message);
     this.name = "OpenAIRequestError";
@@ -41,7 +42,7 @@ export async function createStructuredResponse({
   const apiKey = process.env.OPENAI_API_KEY;
 
   if (!apiKey) {
-    throw new OpenAIRequestError("OPENAI_API_KEY is not configured.", 503);
+    throw new OpenAIRequestError("OPENAI_API_KEY is not configured.", 503, "missing-key");
   }
 
   const response = await fetch("https://api.openai.com/v1/responses", {

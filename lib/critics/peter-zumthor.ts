@@ -85,7 +85,6 @@ export const peterZumthor: CriticProfile = {
   associatedReferenceIds: [
     "therme-vals",
     "bruder-klaus-field-chapel",
-    "kolumba-museum",
   ],
   sourceIds: ["zumthor-atmospheres", "zumthor-thinking-architecture"],
 };

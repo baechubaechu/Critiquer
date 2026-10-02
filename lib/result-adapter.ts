@@ -67,6 +67,7 @@ function translateCategory(
     "closest-precedent": "가까운 선례",
     "alternative-approach": "다른 접근",
     "critical-counterexample": "비판적 반례",
+    "related-study": "관련 사례",
   };
 
   return labels[category];

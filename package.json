@@ -6,30 +6,34 @@
     "dev": "next dev",
     "build": "next build",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
   },
   "dependencies": {
     "@litert-lm/core": "^0.15.0",
     "clsx": "^2.1.1",
-    "next": "^15.5.0",
+    "next": "^15.5.24",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "zod": "^3.25.76"
   },
   "overrides": {
-    "brace-expansion": "5.0.9",
-    "postcss": "$postcss",
-    "sharp": "0.35.3"
+    "brace-expansion": "5.0.12",
+    "postcss": "^8.5.6",
+    "sharp": "0.35.4"
   },
   "devDependencies": {
+    "@testing-library/react": "^16.3.3",
     "@types/node": "^22.16.5",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
     "autoprefixer": "^10.4.21",
     "eslint": "^9.31.0",
-    "eslint-config-next": "^15.5.0",
+    "eslint-config-next": "^15.5.24",
+    "jsdom": "^29.1.1",
     "postcss": "^8.5.6",
     "tailwindcss": "^3.4.17",
-    "typescript": "^5.8.3"
+    "typescript": "^5.8.3",
+    "vitest": "^5.0.3"
   }
 }
